@@ -1,0 +1,8 @@
+FastMAPeriod=9
+SlowMAPeriod=21
+RiskPerTradePct=0.5
+StopLossPips=150
+TakeProfitPips=450
+TrailingPips=80
+MaxTradesPerDay=5
+Magic=27042026
