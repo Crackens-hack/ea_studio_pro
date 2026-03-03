@@ -161,17 +161,31 @@ function Ensure-PortableInstall {
         try {
             Start-Process -FilePath $terminalExe.FullName -WorkingDirectory $instalacionDir -ArgumentList '/portable' -ErrorAction Stop
             Start-Sleep -Seconds 4
-            # Asegurar estructura MQL5/Experts/Ea_Studio
+            # Asegurar estructura MQL5/Experts/Ea_Studio y carpeta de reportes
             $mqlDir      = Join-Path $instalacionDir 'MQL5'
             $expertsDir  = Join-Path $mqlDir 'Experts'
             $eaStudioDir = Join-Path $expertsDir 'Ea_Studio'
-            foreach($d in @($mqlDir, $expertsDir, $eaStudioDir)){
+            $reportDir   = Join-Path $instalacionDir 'report'
+            $testerProfileDir = Join-Path $instalacionDir 'MQL5/Profiles/Tester'
+            foreach($d in @($mqlDir, $expertsDir, $eaStudioDir, $reportDir)){
                 if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
             }
             # Enlazar a acceso_rapido/Ea_Studio
             $eaStudioLink = Join-Path $accesoRapidoDir 'Ea_Studio'
             New-LinkForce -Path $eaStudioLink -Target $eaStudioDir
+            # Enlace rápido a reportes
+            $reportLink = Join-Path $accesoRapidoDir 'report'
+            New-LinkForce -Path $reportLink -Target $reportDir
+            # Enlace rápido a perfiles de tester
+            $testerLink = Join-Path $accesoRapidoDir 'Profiles_Tester'
+            if(Test-Path $testerProfileDir){
+                New-LinkForce -Path $testerLink -Target $testerProfileDir
+            } else {
+                Write-Host "Aviso: no se encontró $testerProfileDir; crea un backtest manual una vez para que MT genere la carpeta, luego reejecutá para enlazar." -ForegroundColor Yellow
+            }
             Write-Host "Estructura MQL5/Experts/Ea_Studio creada y enlazada en acceso_rapido." -ForegroundColor Green
+            Write-Host "Carpeta de reportes report creada y enlazada en acceso_rapido." -ForegroundColor Green
+            Write-Host "Carpeta de perfiles de tester enlazada en acceso_rapido (Profiles_Tester)." -ForegroundColor Green
             Write-Host "Si se abrió la ventana de MT, cerrala cuando termine de generar las carpetas." -ForegroundColor Yellow
         } catch {
             Write-Host "No se pudo lanzar el terminal en modo portable: $_" -ForegroundColor Red
@@ -281,6 +295,19 @@ elseif ($action -eq '3') {
     }
     $outObj | ConvertTo-Json -Depth 5 | Set-Content -Path $outPath -Encoding UTF8
     Write-Host "Credencial activa guardada en $outPath" -ForegroundColor Green
+
+    if ($terminalExe) {
+        $openTerm = Read-Host "¿Abrir MT en modo portable para iniciar sesión y verificar credencial ahora? (s/n)"
+        if ($openTerm -match '^[sS]') {
+            try {
+                Start-Process -FilePath $terminalExe.FullName -ArgumentList '/portable' -WorkingDirectory $instalacionDir -ErrorAction Stop
+                Write-Host "Se abrió MT en modo portable. Ingresá la cuenta y confirmá conexión." -ForegroundColor Cyan
+            } catch {
+                Write-Host "No se pudo abrir el terminal en modo portable: $_" -ForegroundColor Red
+            }
+        }
+    }
+
     exit 0
 }
 else {

@@ -1,13 +1,13 @@
-﻿{
-    "instancia":  "instancia_01",
-    "ruta_instancia":  "C:\\Users\\ezequiel\\Desktop\\.eastudio\\00_setup\\Instancias\\instancia_01",
-    "credencial":  {
-                       "cuenta":  "68292979",
-                       "password":  "Yoamovivir1$",
-                       "servidor":  "RoboForex-Pro",
-                       "fecha_guardado":  "2026-03-02T20:36:29"
-                   },
-    "terminal_exe":  "C:\\Users\\ezequiel\\Desktop\\.eastudio\\00_setup\\Instancias\\instancia_01\\instalacion\\terminal64.exe",
-    "metaeditor_exe":  "C:\\Users\\ezequiel\\Desktop\\.eastudio\\00_setup\\Instancias\\instancia_01\\instalacion\\MetaEditor64.exe",
-    "fecha_seleccion":  "2026-03-02T20:37:11"
+{
+  "instancia": "instancia_01",
+  "ruta_instancia": "C:\\Users\\ezequiel\\Desktop\\.eastudio\\00_setup\\Instancias\\instancia_01",
+  "credencial": {
+    "cuenta": "68293629",
+    "password": "Yoamoadios1$",
+    "servidor": "RoboForex-Pro",
+    "fecha_guardado": "2026-03-03T00:23:56"
+  },
+  "terminal_exe": "C:\\Users\\ezequiel\\Desktop\\.eastudio\\00_setup\\Instancias\\instancia_01\\instalacion\\terminal64.exe",
+  "metaeditor_exe": "C:\\Users\\ezequiel\\Desktop\\.eastudio\\00_setup\\Instancias\\instancia_01\\instalacion\\MetaEditor64.exe",
+  "fecha_seleccion": "2026-03-03T00:24:15"
 }

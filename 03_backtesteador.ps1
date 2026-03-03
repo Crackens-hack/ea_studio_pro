@@ -74,6 +74,7 @@ if (-not $eas) {
 
 Write-Host "`nEAs disponibles:" -ForegroundColor Cyan
 $i=1; foreach($ea in $eas){ Write-Host ("[{0}] {1}" -f $i, $ea.Name) ; $i++ }
+
 $sel = Read-Host "Elegí número de EA para probar"
 if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $eas.Count){
     Write-Host "Selección inválida." -ForegroundColor Red
@@ -90,7 +91,7 @@ $lines = Update-IniValue -Lines $lines -Section "Tester" -Key "Expert"   -Value 
 
 $lines | Set-Content -Path $configPath -Encoding UTF8
 
-$args = @("/config:$configPath")
+$args = @("/portable", "/config:$configPath")
 Write-Host "`nLanzando tester con:" -ForegroundColor Cyan
 Write-Host "  Terminal: $terminalExe" -ForegroundColor Gray
 Write-Host "  Config:   $configPath" -ForegroundColor Gray
