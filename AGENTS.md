@@ -38,6 +38,17 @@ Flujo recomendado en cada sesión:
    - Usar los ejemplos de `01_documentacion_de_referencia/backtesting-modos/*.ini` y el README de esa carpeta como guía; ofrecer presets listos si el usuario lo pide.
    - Tras lanzar el tester, esperar el resultado y, si hay errores, ayudar a ajustar parámetros o EA y reintentar.
 
+7) Archivos .set (parámetros de tester/optimización):
+   - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`, ruta `00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/`.
+   - Nombre típico: mismo nombre del EA, ej. `EA_Spectacular.set`.
+   - Formato por línea (para numéricos/bools/enums): `Parametro=valor_defecto||inicio||paso||fin||Y|N` donde:
+     - `valor_defecto` es lo que usa un backtest single si no optimiza.
+     - `inicio`, `paso`, `fin` definen rango de optimización; `Y` activa optimización, `N` la deja fija.
+   - Para strings no se usan rangos: escribir solo `Parametro=valor` (o vacío `Parametro=` para usar el símbolo/valor definido en el .ini).
+   - Timeframes van como enteros (ej. H1=16385); símbolos deben coincidir exactamente con el Market Watch de la cuenta (incluir sufijos si existen).
+   - Cada vez que se cambie de instancia/credencial, asegurarse de usar/crear el .set dentro de esa instancia, no en otra carpeta.
+   - Mapas de Optimization en .ini: 0 = slow complete (búsqueda exhaustiva), 1 = fast genetic, 2 = all symbols in Market Watch. Para single run dejar la línea `Optimization` vacía o comentada y asegurarse de que el .set no tenga flags `Y`.
+
 Tono y ritmo:
 - Ir despacio, ser muy claro para usuarios nuevos.
 - Confirmar credencial antes de avanzar al código.

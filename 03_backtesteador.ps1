@@ -4,6 +4,10 @@
 $root        = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
 $credPath    = Join-Path $root '00_setup/Instancias/credencial_en_uso.json'
 $configPath  = Join-Path $root 'plantilla_funcional.ini'
+$tplDir      = Join-Path $root 'B_Plantillas'
+$tplSingle   = Join-Path $tplDir 'plantilla_single.ini'
+$tplGenetic  = Join-Path $tplDir 'plantilla_genetica.ini'
+$tplForward  = Join-Path $tplDir 'plantilla_forward.ini'
 
 function Update-IniValue {
     param(
@@ -82,6 +86,52 @@ if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $eas.Count){
 }
 $chosen = $eas[[int]$sel - 1]
 $relativeExpert = "Ea_Studio\$($chosen.Name)"
+$eaNameNoExt = [System.IO.Path]::GetFileNameWithoutExtension($chosen.Name)
+
+Write-Host "`nModo (single/genetica/forward)" -ForegroundColor Cyan
+$mode = Read-Host "Ingresá modo"
+switch ($mode.ToLower()) {
+    "single"   { $tplToUse = $tplSingle ; $setName = "" }
+    "genetica" { $tplToUse = $tplGenetic; $setName = "$eaNameNoExt.set" }
+    "forward"  { $tplToUse = $tplForward; $setName = "$eaNameNoExt.set" }
+    default {
+        Write-Host "Modo inválido. Usa: single | genetica | forward" -ForegroundColor Red
+        exit 1
+    }
+}
+
+if (-not (Test-Path $tplToUse)) {
+    Write-Host "No encontré la plantilla para modo $mode en $tplToUse. Revisá B_Plantillas." -ForegroundColor Red
+    exit 1
+}
+
+# Reemplaza placeholders en todas las plantillas (credenciales + EA) para mantenerlas al día
+$templates = @($tplSingle, $tplGenetic, $tplForward)
+foreach($tpl in $templates){
+    if(-not (Test-Path $tpl)) { continue }
+    $content = Get-Content $tpl -Raw
+    $content = $content -replace '__LOGIN__',    [regex]::Escape($cred.credencial.cuenta)
+    $content = $content -replace '__PASSWORD__', [regex]::Escape($cred.credencial.password)
+    $content = $content -replace '__SERVER__',   [regex]::Escape($cred.credencial.servidor)
+    $content = $content -replace '__EA_NAME__',  [regex]::Escape($eaNameNoExt)
+
+    # Ajustes según modo del archivo
+    if($tpl -eq $tplSingle){
+        $content = $content -replace '(?m)^ExpertParameters=.*$', 'ExpertParameters='
+        $content = $content -replace '(?m)^Optimization=.*$', 'Optimization='
+        $content = $content -replace '(?m)^Report=.*$', "Report=report\report_single__$eaNameNoExt.htm"
+    } else {
+        $content = $content -replace '(?m)^ExpertParameters=.*$', "ExpertParameters=$eaNameNoExt.set"
+    }
+
+    # Asegurar prefijo Ea_Studio\
+    $content = $content -replace '(?m)^Expert=.*$', "Expert=Ea_Studio\$eaNameNoExt.ex5"
+    Set-Content -Path $tpl -Value $content -Encoding UTF8
+}
+
+# Tomamos la plantilla específica elegida y la volcamos a plantilla_funcional.ini
+$finalContent = Get-Content $tplToUse -Raw
+$finalContent | Set-Content -Path $configPath -Encoding UTF8
 
 $lines = Get-Content $configPath
 $lines = Update-IniValue -Lines $lines -Section "Common" -Key "Login"    -Value ($cred.credencial.cuenta)
