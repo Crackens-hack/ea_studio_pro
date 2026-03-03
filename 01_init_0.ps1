@@ -154,7 +154,8 @@ function Ensure-PortableInstall {
     ) | Set-Content -Path $launcherCmd -Encoding ASCII
 
     # Lanzar una vez en portable para que genere data folder (solo si el usuario quiere).
-    $launch = Read-Host "¿Abrir ahora en modo portable para inicializar carpetas? (s/n)"
+    # Auto-launch MT en modo portable sin preguntar (antes se pedía s/n).
+    $launch = 's'
     if($launch -match '^[sS]'){
         Write-Host "Abriendo MT en modo portable..." -ForegroundColor Cyan
         try {
@@ -214,7 +215,7 @@ if ($action -eq '1') {
 }
 elseif ($action -eq '2') {
     # instancias sin credenciales.json
-    $sinCred = $instances | Where-Object { $_.Credenciales -eq 'No' }
+    $sinCred = @($instances | Where-Object { $_.Credenciales -eq 'No' })
     if (-not $sinCred) {
         Write-Host "Todas las instancias ya tienen credenciales.json. Nada que hacer." -ForegroundColor Yellow
         exit 0
@@ -242,7 +243,7 @@ elseif ($action -eq '2') {
     exit 0
 }
 elseif ($action -eq '3') {
-    $conCred = $instances | Where-Object { $_.Credenciales -eq 'Sí' }
+    $conCred = @($instances | Where-Object { $_.Credenciales -eq 'Sí' })
     if (-not $conCred) {
         Write-Host "No hay instancias con credenciales.json. Asigna primero (opción 2)." -ForegroundColor Yellow
         exit 0
