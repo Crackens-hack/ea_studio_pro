@@ -1,19 +1,19 @@
-# Compila todos los EAs (.mq5/.mql5) en A_MQL5/01_ea_construccion usando el MetaEditor de la instancia activa.
+# Compila todos los EAs (.mq5/.mql5) en BUILD/01_ea_construccion usando el MetaEditor de la instancia activa.
 # Usa la ruta almacenada en 00_setup/Instancias/credencial_en_uso.json (metaeditor_exe).
 
 $ErrorActionPreference = 'Stop'
 
 $repoRoot  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $credPath  = Join-Path $repoRoot '00_setup/Instancias/credencial_en_uso.json'
-$sourceDir = Join-Path $repoRoot 'A_MQL5/01_ea_construccion'
+$sourceDir = Join-Path $repoRoot 'BUILD/01_ea_construccion'
 $archiveDir= Join-Path $sourceDir 'archivados'
-$logDir    = Join-Path $repoRoot '02_compilador/logs'
+$logDir    = Join-Path $repoRoot 'Compilacion/logs'
 
-if (-not (Test-Path $credPath)) { throw "No existe $credPath. Ejecutá 01_init_0.ps1 (opción 3) para generar credencial_en_uso.json." }
+if (-not (Test-Path $credPath)) { throw "No existe $credPath. Ejecutá .\\00_setup\\Instalador.ps1 (opción 3) para generar credencial_en_uso.json." }
 $cred = Get-Content $credPath -Raw | ConvertFrom-Json
-if (-not $cred.metaeditor_exe) { throw "El JSON activo no tiene metaeditor_exe. Reejecutá 01_init_0.ps1 opción 3." }
+if (-not $cred.metaeditor_exe) { throw "El JSON activo no tiene metaeditor_exe. Reejecutá .\\00_setup\\Instalador.ps1 opción 3." }
 if (-not (Test-Path $cred.metaeditor_exe)) { throw "No se encontró MetaEditor en: $($cred.metaeditor_exe)" }
-if (-not $cred.ruta_instancia) { throw "El JSON activo no tiene ruta_instancia. Reejecutá 01_init_0.ps1 opción 3." }
+if (-not $cred.ruta_instancia) { throw "El JSON activo no tiene ruta_instancia. Reejecutá .\\00_setup\\Instalador.ps1 opción 3." }
 $eaStudioDir = Join-Path $cred.ruta_instancia 'instalacion/MQL5/Experts/Ea_Studio'
 if (-not (Test-Path $eaStudioDir)) { New-Item -ItemType Directory -Path $eaStudioDir -Force | Out-Null }
 $metaLogSrc  = Join-Path $cred.ruta_instancia 'instalacion/logs/metaeditor.log'

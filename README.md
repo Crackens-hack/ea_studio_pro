@@ -4,9 +4,9 @@ Objetivo central: pensar, diseñar y construir Asesores Expertos (EA) de alta ca
 
 Cómo trabajamos
 - Ideación asistida por IA: definir lógica, métricas y criterios de fitness antes de escribir código.
-- Desarrollo de EA: la IA genera/edita `.mq5` en `A_MQL5/01_ea_construccion`.
-- Compilación y despliegue: scripts de la carpeta raíz (`02_compilador.ps1`, etc.) copian el `.ex5` a la instancia activa.
-- Backtesting y optimización: `plantilla_funcional.ini` + `.set` en `MQL5/Profiles/Tester` controlan los runs; el usuario elige modo, fechas y símbolos.
+- Desarrollo de EA: la IA genera/edita `.mq5` en `BUILD/01_ea_construccion`.
+- Compilación y despliegue: scripts de la carpeta raíz (`Compilador.ps1`, etc.) copian el `.ex5` a la instancia activa.
+- Backtesting y optimización: `Tools/EXEC-INI/plantilla_funcional.ini` + `.set` en `MQL5/Profiles/Tester` controlan los runs; el usuario elige modo, fechas y símbolos.
 - Iteración sobre resultados: leer logs, ajustar parámetros/código, repetir hasta obtener métricas limpias.
 
 Principios

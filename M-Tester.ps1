@@ -3,8 +3,8 @@
 
 $root        = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
 $credPath    = Join-Path $root '00_setup/Instancias/credencial_en_uso.json'
-$configPath  = Join-Path $root 'plantilla_funcional.ini'
-$tplDir      = Join-Path $root 'B_Plantillas'
+$configPath  = Join-Path $root 'Tools/EXEC-INI/plantilla_funcional.ini'
+$tplDir      = Join-Path $root 'Tools'
 $tplSingle   = Join-Path $tplDir 'plantilla_single.ini'
 $tplGenetic  = Join-Path $tplDir 'plantilla_genetica.ini'
 $tplForward  = Join-Path $tplDir 'plantilla_forward.ini'
@@ -51,7 +51,7 @@ function Update-IniValue {
 }
 
 if (-not (Test-Path $credPath)) {
-    Write-Host "No se encontró credencial_en_uso.json. Ejecutá 01_init_0.ps1 opción 3 para marcar una instancia activa." -ForegroundColor Yellow
+    Write-Host "No se encontró credencial_en_uso.json. Ejecutá .\\00_setup\\Instalador.ps1 opción 3 para marcar una instancia activa." -ForegroundColor Yellow
     exit 1
 }
 
@@ -62,12 +62,12 @@ try { $cred = Get-Content $credPath -Raw | ConvertFrom-Json } catch {
 
 $terminalExe = $cred.terminal_exe
 if (-not $terminalExe -or -not (Test-Path $terminalExe)) {
-    Write-Host "terminal_exe no está definido o no existe. Reejecutá 01_init_0.ps1 opción 3." -ForegroundColor Red
+    Write-Host "terminal_exe no está definido o no existe. Reejecutá .\\00_setup\\Instalador.ps1 opción 3." -ForegroundColor Red
     exit 1
 }
 
 if (-not (Test-Path $configPath)) {
-    Write-Host "No se encontró $configPath. Asegurate de tener plantilla_funcional.ini en la raíz del proyecto." -ForegroundColor Red
+    Write-Host "No se encontró $configPath. Asegurate de tener plantilla_funcional.ini en Tools/EXEC-INI." -ForegroundColor Red
     exit 1
 }
 
@@ -79,7 +79,7 @@ if (-not (Test-Path $eaDir)) {
 
 $eas = Get-ChildItem -Path $eaDir -Filter *.ex5 -File | Sort-Object Name
 if (-not $eas) {
-    Write-Host "No hay .ex5 en $eaDir. Compilá un EA con 02_compilador.ps1 antes de backtestear." -ForegroundColor Yellow
+    Write-Host "No hay .ex5 en $eaDir. Compilá un EA con Compilador.ps1 antes de backtestear." -ForegroundColor Yellow
     exit 1
 }
 

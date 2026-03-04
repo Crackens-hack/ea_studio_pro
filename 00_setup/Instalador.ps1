@@ -5,9 +5,10 @@ param(
     [string]$InstallerPath
 )
 
-$expectedRoot   = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
-$instanciasRoot = Join-Path $expectedRoot '00_setup/Instancias'
+$expectedRoot     = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
+$instanciasRoot   = Join-Path $expectedRoot '00_setup/Instancias'
 $defaultInstaller = Join-Path $expectedRoot '00_setup/bin/mt5setup.exe'
+$dataRoot         = Join-Path $expectedRoot 'DATA'
 
 function Get-CredentialKeys {
     param($creds)
@@ -53,14 +54,19 @@ function Get-Instances {
     $dirs = Get-ChildItem -Path $instanciasRoot -Directory -ErrorAction SilentlyContinue
     foreach ($d in $dirs) {
         $instalacion   = Join-Path $d.FullName 'instalacion'
-        $accesoRapido  = Join-Path $d.FullName 'acceso_rapido'
         $portableExe   = Get-ChildItem -Path $instalacion -Filter 'terminal*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
-        $credPath      = Join-Path $d.FullName 'credenciales.json'
+        $credPath      = Join-Path $instalacion 'credenciales.json'
+        $legacyCred    = Join-Path $d.FullName 'credenciales.json'
+        if(-not (Test-Path $credPath) -and (Test-Path $legacyCred)){
+            try {
+                if (-not (Test-Path $instalacion)) { New-Item -ItemType Directory -Path $instalacion -Force | Out-Null }
+                Move-Item -Path $legacyCred -Destination $credPath -Force
+            } catch {}
+        }
         $hasCred       = Test-Path $credPath
         [pscustomobject]@{
             Instancia     = $d.Name
             Instalacion   = if (Test-Path $instalacion) {'OK'} else {'-'}
-            AccesoRapido  = if (Test-Path $accesoRapido) {'OK'} else {'-'}
             PortableExe   = if ($portableExe) {$portableExe.Name} else {'(no exe)'}
             Credenciales  = if ($hasCred) { 'Sí' } else { 'No' }
             CredPath      = $credPath
@@ -71,9 +77,17 @@ function Get-Instances {
 
 function Load-InstanceCred {
     param($instancePath)
-    $credPath = Join-Path $instancePath 'credenciales.json'
-    if (-not (Test-Path $credPath)) { return $null }
-    try { return Get-Content $credPath -Raw | ConvertFrom-Json } catch { return $null }
+    $instCred = Join-Path $instancePath 'instalacion/credenciales.json'
+    $legacy   = Join-Path $instancePath 'credenciales.json'
+
+    if (-not (Test-Path $instCred) -and (Test-Path $legacy)) {
+        try {
+            if (-not (Test-Path (Split-Path $instCred -Parent))) { New-Item -ItemType Directory -Path (Split-Path $instCred -Parent) -Force | Out-Null }
+            Move-Item -Path $legacy -Destination $instCred -Force
+        } catch {}
+    }
+    if (-not (Test-Path $instCred)) { return $null }
+    try { return Get-Content $instCred -Raw | ConvertFrom-Json } catch { return $null }
 }
 
 function Ensure-PortableInstall {
@@ -81,9 +95,8 @@ function Ensure-PortableInstall {
     $success         = $false
     $targetRoot      = Join-Path $instanciasRoot $instName
     $instalacionDir  = Join-Path $targetRoot 'instalacion'
-    $accesoRapidoDir = Join-Path $targetRoot 'acceso_rapido'
 
-    foreach ($d in @($targetRoot, $instalacionDir, $accesoRapidoDir)) {
+    foreach ($d in @($targetRoot, $instalacionDir)) {
         if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
     }
 
@@ -171,22 +184,8 @@ function Ensure-PortableInstall {
             foreach($d in @($mqlDir, $expertsDir, $eaStudioDir, $reportDir, $testerProfileDir, $presetsDir)){
                 if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
             }
-            # Enlazar a acceso_rapido/Ea_Studio
-            $eaStudioLink = Join-Path $accesoRapidoDir 'Ea_Studio'
-            New-LinkForce -Path $eaStudioLink -Target $eaStudioDir
-            # Enlace rápido a reportes
-            $reportLink = Join-Path $accesoRapidoDir 'report'
-            New-LinkForce -Path $reportLink -Target $reportDir
-            # Enlace rápido a perfiles de tester
-            $testerLink = Join-Path $accesoRapidoDir 'Profiles_Tester'
-            New-LinkForce -Path $testerLink -Target $testerProfileDir
-            # Enlace rápido a presets (para .set del probador)
-            $presetsLink = Join-Path $accesoRapidoDir 'Presets'
-            New-LinkForce -Path $presetsLink -Target $presetsDir
-            Write-Host "Estructura MQL5/Experts/Ea_Studio creada y enlazada en acceso_rapido." -ForegroundColor Green
-            Write-Host "Carpeta de reportes report creada y enlazada en acceso_rapido." -ForegroundColor Green
-            Write-Host "Carpeta de perfiles de tester enlazada en acceso_rapido (Profiles_Tester)." -ForegroundColor Green
-            Write-Host "Carpeta de presets enlazada en acceso_rapido (Presets)." -ForegroundColor Green
+            Write-Host "Estructura MQL5/Experts/Ea_Studio creada." -ForegroundColor Green
+            Write-Host "Carpetas report, Profiles/Tester y Presets creadas." -ForegroundColor Green
             Write-Host "Si se abrió la ventana de MT, cerrala cuando termine de generar las carpetas." -ForegroundColor Yellow
         } catch {
             Write-Host "No se pudo lanzar el terminal en modo portable: $_" -ForegroundColor Red
@@ -198,7 +197,61 @@ function Ensure-PortableInstall {
     return $success
 }
 
+function Build-Hub {
+    param(
+        [string]$instName,
+        [string]$instPath
+    )
+    if(-not $instName -or -not $instPath){ return }
+
+    $hubPath = Join-Path $dataRoot ("{0}_hub" -f $instName)
+    if(Test-Path $hubPath){ Remove-Item -Path $hubPath -Recurse -Force -ErrorAction SilentlyContinue }
+    New-Item -ItemType Directory -Path $hubPath -Force | Out-Null
+
+    $instalacion = Join-Path $instPath 'instalacion'
+    $credPath    = Join-Path $instalacion 'credenciales.json'
+    $mqlDir      = Join-Path $instalacion 'MQL5'
+
+    $links = @(
+        @{ name='credencial.json'; target=$credPath },
+        @{ name='ea_studio';      target=Join-Path $mqlDir 'Experts/Ea_Studio' },
+        @{ name='presets';        target=Join-Path $mqlDir 'Presets' },
+        @{ name='profiles_tester';target=Join-Path $mqlDir 'Profiles/Tester' },
+        @{ name='reports';        target=Join-Path $instalacion 'report' },
+        @{ name='trace_terminal'; target=Join-Path $mqlDir 'Logs' },
+        @{ name='trace_editor';   target=Join-Path $instalacion 'Logs' },
+        @{ name='trace_tester';   target=Join-Path $instalacion 'Tester/Logs' }
+    )
+
+    foreach($l in $links){
+        $p = Join-Path $hubPath $l.name
+        if(Test-Path $p){ Remove-Item -Path $p -Force -Recurse -ErrorAction SilentlyContinue }
+        New-LinkForce -Path $p -Target $l.target
+    }
+
+    # trace_agents: crear contenedor y symlinks a cada Agent-*/logs
+    $agentsRoot = Join-Path $instalacion 'Tester'
+    $hubAgents  = Join-Path $hubPath 'trace_agents'
+    if(Test-Path $hubAgents){ Remove-Item -Path $hubAgents -Force -Recurse -ErrorAction SilentlyContinue }
+    New-Item -ItemType Directory -Path $hubAgents -Force | Out-Null
+    if(Test-Path $agentsRoot){
+        Get-ChildItem -Path $agentsRoot -Directory -Filter 'Agent-*' -ErrorAction SilentlyContinue | ForEach-Object {
+            $logsDir = Join-Path $_.FullName 'logs'
+            if(Test-Path $logsDir){
+                $linkPath = Join-Path $hubAgents $_.Name
+                if(Test-Path $linkPath){ Remove-Item -Path $linkPath -Force -Recurse -ErrorAction SilentlyContinue }
+                New-LinkForce -Path $linkPath -Target $logsDir
+            }
+        }
+    }
+}
+
 Assert-Location
+
+# Asegurar carpeta DATA en raíz
+if (-not (Test-Path $dataRoot)) {
+    try { New-Item -ItemType Directory -Path $dataRoot -Force | Out-Null } catch {}
+}
 $instances = Get-Instances -creds $null
 
 if (-not $instances) {
@@ -232,7 +285,7 @@ elseif ($action -eq '2') {
     # instancias sin credenciales.json
     $sinCred = @($instances | Where-Object { $_.Credenciales -eq 'No' })
     if (-not $sinCred) {
-        Write-Host "Todas las instancias ya tienen credenciales.json. Nada que hacer." -ForegroundColor Yellow
+        Write-Host "Todas las instancias ya tienen credenciales.json (en instalacion/). Nada que hacer." -ForegroundColor Yellow
         exit 0
     }
     Write-Host "`nInstancias sin credenciales:" -ForegroundColor Cyan
@@ -252,15 +305,21 @@ elseif ($action -eq '2') {
         servidor    = $server
         fecha_guardado = (Get-Date).ToString('s')
     }
-    $credPath = Join-Path $chosen.Ruta 'credenciales.json'
-    $credObj | ConvertTo-Json | Set-Content -Path $credPath -Encoding UTF8
-    Write-Host "Credenciales guardadas en $credPath" -ForegroundColor Green
+    $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
+    if (-not (Test-Path $instalacionDir)) { New-Item -ItemType Directory -Path $instalacionDir -Force | Out-Null }
+    $credPathNew = Join-Path $instalacionDir 'credenciales.json'
+    $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
+    # limpiar legacy si existiera
+    $credLegacy = Join-Path $chosen.Ruta 'credenciales.json'
+    if(Test-Path $credLegacy){ Remove-Item -Path $credLegacy -Force -ErrorAction SilentlyContinue }
+    Write-Host "Credenciales guardadas en $credPathNew" -ForegroundColor Green
+    Build-Hub -instName $chosen.Instancia -instPath $chosen.Ruta
     exit 0
 }
 elseif ($action -eq '3') {
     $conCred = @($instances | Where-Object { $_.Credenciales -eq 'Sí' })
     if (-not $conCred) {
-        Write-Host "No hay instancias con credenciales.json. Asigna primero (opción 2)." -ForegroundColor Yellow
+        Write-Host "No hay instancias con credenciales.json en instalacion/. Asigna primero (opción 2)." -ForegroundColor Yellow
         exit 0
     }
     Write-Host "`nInstancias con credenciales disponibles:" -ForegroundColor Cyan
@@ -296,6 +355,7 @@ elseif ($action -eq '3') {
     }
     $outObj | ConvertTo-Json -Depth 5 | Set-Content -Path $outPath -Encoding UTF8
     Write-Host "Credencial activa guardada en $outPath" -ForegroundColor Green
+    Build-Hub -instName $chosen.Instancia -instPath $chosen.Ruta
 
     if ($terminalExe) {
         $openTerm = Read-Host "¿Abrir MT en modo portable para iniciar sesión y verificar credencial ahora? (s/n)"
