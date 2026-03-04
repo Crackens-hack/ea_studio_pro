@@ -2,8 +2,9 @@
 
 Archivos en esta carpeta:
 - `plantilla_single.ini`: corrida única (sin Optimización). Usa `ExpertParameters` vacío.
-- `plantilla_genetica.ini`: optimización fast genetic (`Optimization=1`, `OptimizationCriterion=6` para usar `OnTester`).
-- `plantilla_forward.ini`: optimización con forward (`Optimization=3`, `ForwardMode=1` tiempo).
+- `plantilla_genetica.ini`: optimización genética (`Optimization=2`, `OptimizationCriterion=6` para usar `OnTester`).
+- `plantilla_forward.ini`: optimización con forward (`Optimization=2`, `ForwardMode=1` tiempo).
+- `plantilla_genetica_fw50.ini`: optimización genética con forward 50/50 (`Optimization=2`, `ForwardMode=1`), report `report_geneticfw__`.
 
 Placeholders a rellenar antes de lanzar `03_backtesteador.ps1`:
 - `__LOGIN__`, `__PASSWORD__`, `__SERVER__`: credenciales de la instancia activa.

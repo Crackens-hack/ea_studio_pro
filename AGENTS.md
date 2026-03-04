@@ -15,12 +15,14 @@ Flujo recomendado en cada sesión:
 2) Preparar EA (el agente es quien genera/edita código MQL5):
    - Explicar que los .mq5/.mql5 van en `A_MQL5/01_ea_construccion`.
    - Ofrecer crear un EA nuevo según reglas del usuario o editar uno existente.
+   - Cada EA debe acompañarse con un archivo de teoría `A_MQL5/01_ea_construccion/<nombre>_teoria.md` describiendo lógica, entradas/salidas, gestión de riesgo y parámetros clave.
 
 3) Compilar:
    - Preguntar si el usuario quiere que el agente ejecute `02_compilador.ps1`; solo ejecutarlo si el usuario lo autoriza explícitamente.
    - Si lo prefiere hacer manual: indicar `powershell -ExecutionPolicy Bypass -File .\02_compilador.ps1`.
    - Tras compilar, revisar `02_compilador/logs` y confirmar que el `.ex5` se copió a `00_setup/Instancias/<instancia>/instalacion/MQL5/Experts/Ea_Studio`.
    - Si hay errores/advertencias: leer el log, corregir el .mq5 y volver a compilar hasta que quede limpio. El agente es responsable de iterar.
+   - Al archivar EAs antiguos, archivar también el respectivo `<nombre>_teoria.md` para mantener contexto histórico.
 
 4) Referencias y calidad de código:
    - Antes o durante la elaboración del EA, puede consultar `01_documentacion_de_referencia` y `docs` para buscar includes, convenciones y ejemplos que mejoren la calidad.

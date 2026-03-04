@@ -39,6 +39,12 @@ if ($files.Count -gt 1) {
         # Mover también el ex5 con el mismo nombre si está en la carpeta de construcción
         $ex5 = Join-Path $sourceDir ($f.BaseName + '.ex5')
         if (Test-Path $ex5) { Move-Item -Path $ex5 -Destination (Join-Path $archiveDir ([IO.Path]::GetFileName($ex5))) -Force }
+        # Mover también teoría asociada si existe (BaseName_teoria.md)
+        $theory = Join-Path $sourceDir ($f.BaseName + '_teoria.md')
+        if (Test-Path $theory) {
+            $theoryDest = Join-Path $archiveDir ([IO.Path]::GetFileName($theory))
+            Move-Item -Path $theory -Destination $theoryDest -Force
+        }
     }
     $files = $keep
     $keepList = ($keep | Select-Object -ExpandProperty Name -Unique) -join ', '

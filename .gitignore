@@ -1,2 +1,9 @@
-00_setup/Instancias/
+00_setup/Instancias/instancia_01
+00_setup/Instancias/instancia_02
+00_setup/Instancias/instancia_03
+00_setup/Instancias/instancia_04
+00_setup/Instancias/instancia_05
+00_setup/Instancias/instancia_06
+
 *.dll
+.env
