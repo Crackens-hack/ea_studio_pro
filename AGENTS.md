@@ -41,7 +41,9 @@ Flujo recomendado en cada sesión:
    - Tras lanzar el tester, esperar el resultado y, si hay errores, ayudar a ajustar parámetros o EA y reintentar.
 
 7) Archivos .set (parámetros de tester/optimización):
-   - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`, ruta `00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/`.
+   - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.
+     - Carpeta operativa para el probador: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` (es donde MT5 busca por defecto). **El agente debe guardar/copiar allí los .set que cree.**
+     - Carpeta de perfiles del tester: `00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/` (puede usarse como staging, pero si el .set se deja ahí hay que duplicarlo en `Presets` antes de correr pruebas).
    - Nombre típico: mismo nombre del EA, ej. `EA_Spectacular.set`.
    - Formato por línea (para numéricos/bools/enums): `Parametro=valor_defecto||inicio||paso||fin||Y|N` donde:
      - `valor_defecto` es lo que usa un backtest single si no optimiza.

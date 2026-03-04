@@ -162,12 +162,13 @@ function Ensure-PortableInstall {
             Start-Process -FilePath $terminalExe.FullName -WorkingDirectory $instalacionDir -ArgumentList '/portable' -ErrorAction Stop
             Start-Sleep -Seconds 4
             # Asegurar estructura MQL5/Experts/Ea_Studio y carpeta de reportes
-            $mqlDir      = Join-Path $instalacionDir 'MQL5'
-            $expertsDir  = Join-Path $mqlDir 'Experts'
-            $eaStudioDir = Join-Path $expertsDir 'Ea_Studio'
-            $reportDir   = Join-Path $instalacionDir 'report'
+            $mqlDir           = Join-Path $instalacionDir 'MQL5'
+            $expertsDir       = Join-Path $mqlDir 'Experts'
+            $eaStudioDir      = Join-Path $expertsDir 'Ea_Studio'
+            $reportDir        = Join-Path $instalacionDir 'report'
             $testerProfileDir = Join-Path $instalacionDir 'MQL5/Profiles/Tester'
-            foreach($d in @($mqlDir, $expertsDir, $eaStudioDir, $reportDir)){
+            $presetsDir       = Join-Path $mqlDir 'Presets'
+            foreach($d in @($mqlDir, $expertsDir, $eaStudioDir, $reportDir, $testerProfileDir, $presetsDir)){
                 if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
             }
             # Enlazar a acceso_rapido/Ea_Studio
@@ -178,14 +179,14 @@ function Ensure-PortableInstall {
             New-LinkForce -Path $reportLink -Target $reportDir
             # Enlace rápido a perfiles de tester
             $testerLink = Join-Path $accesoRapidoDir 'Profiles_Tester'
-            if(Test-Path $testerProfileDir){
-                New-LinkForce -Path $testerLink -Target $testerProfileDir
-            } else {
-                Write-Host "Aviso: no se encontró $testerProfileDir; crea un backtest manual una vez para que MT genere la carpeta, luego reejecutá para enlazar." -ForegroundColor Yellow
-            }
+            New-LinkForce -Path $testerLink -Target $testerProfileDir
+            # Enlace rápido a presets (para .set del probador)
+            $presetsLink = Join-Path $accesoRapidoDir 'Presets'
+            New-LinkForce -Path $presetsLink -Target $presetsDir
             Write-Host "Estructura MQL5/Experts/Ea_Studio creada y enlazada en acceso_rapido." -ForegroundColor Green
             Write-Host "Carpeta de reportes report creada y enlazada en acceso_rapido." -ForegroundColor Green
             Write-Host "Carpeta de perfiles de tester enlazada en acceso_rapido (Profiles_Tester)." -ForegroundColor Green
+            Write-Host "Carpeta de presets enlazada en acceso_rapido (Presets)." -ForegroundColor Green
             Write-Host "Si se abrió la ventana de MT, cerrala cuando termine de generar las carpetas." -ForegroundColor Yellow
         } catch {
             Write-Host "No se pudo lanzar el terminal en modo portable: $_" -ForegroundColor Red
