@@ -1,3 +1,4 @@
 00_setup/Instancias/
 *.dll
 .env
+docs/
