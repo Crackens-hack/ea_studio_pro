@@ -16,9 +16,11 @@ Flujo recomendado en cada sesión:
    - Explicar que los .mq5/.mql5 van en `A_MQL5/01_ea_construccion`.
    - Ofrecer crear un EA nuevo según reglas del usuario o editar uno existente.
    - Cada EA debe acompañarse con un archivo de teoría `A_MQL5/01_ea_construccion/<nombre>_teoria.md` describiendo lógica, entradas/salidas, gestión de riesgo y parámetros clave.
+   - No crear plantillas .ini de backtesting salvo que el usuario lo pida explícitamente. Sólo generar el .set en la instancia activa.
+   - Flujo después de crear el EA y el .set: **preguntar si compilar y preferentemente compilar el agente** (ejecutando `02_compilador.ps1` si el usuario lo autoriza). No saltar directo a backtests hasta completar la compilación.
 
 3) Compilar:
-   - Preguntar si el usuario quiere que el agente ejecute `02_compilador.ps1`; solo ejecutarlo si el usuario lo autoriza explícitamente.
+   - Preguntar si el usuario quiere que el agente ejecute `02_compilador.ps1`; sólo ejecutarlo si el usuario lo autoriza explícitamente. La expectativa por defecto es que el agente compile, pero debe solicitar permiso antes.
    - Si lo prefiere hacer manual: indicar `powershell -ExecutionPolicy Bypass -File .\02_compilador.ps1`.
    - Tras compilar, revisar `02_compilador/logs` y confirmar que el `.ex5` se copió a `00_setup/Instancias/<instancia>/instalacion/MQL5/Experts/Ea_Studio`.
    - Si hay errores/advertencias: leer el log, corregir el .mq5 y volver a compilar hasta que quede limpio. El agente es responsable de iterar.
@@ -35,10 +37,10 @@ Flujo recomendado en cada sesión:
    - Registrar métricas en log/Comment para que el usuario las vea en pruebas y optimizaciones.
 
 6) Backtesting (03_backtesteador.ps1):
-   - Antes de ejecutarlo, preguntar al usuario qué modo quiere: single, con preset (.set), optimización, forward, visual, fechas, símbolo, periodo, modelado, spread, etc. El usuario controla los parámetros.
-   - Con permiso del usuario, el agente puede editar `plantilla_funcional.ini` y luego correr `03_backtesteador.ps1`. Si el usuario prefiere hacerlo manual, solo darle el comando.
-   - Usar los ejemplos de `01_documentacion_de_referencia/backtesting-modos/*.ini` y el README de esa carpeta como guía; ofrecer presets listos si el usuario lo pide.
-   - Tras lanzar el tester, esperar el resultado y, si hay errores, ayudar a ajustar parámetros o EA y reintentar.
+   - Sugerir al usuario el modo de prueba (single, preset/.set, optimización, forward, visual, fechas, símbolo, modelado, spread, etc.), pero **no ejecutar `03_backtesteador.ps1`** ni pedir permiso para ejecutarlo. El usuario decide y lo corre.
+   - No proponer ni crear archivos .ini a menos que el usuario lo pida explícitamente. Se puede sugerir qué valores ajustar si el usuario edita un .ini.
+   - Usar los ejemplos de `01_documentacion_de_referencia/backtesting-modos/*.ini` como referencia para sugerencias, no para crear archivos sin pedido.
+   - Si el usuario comparte resultados/errores de backtest, ayudar a interpretarlos y proponer ajustes; iterar el EA y recompilar según sea necesario.
 
 7) Archivos .set (parámetros de tester/optimización):
    - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.
@@ -52,6 +54,7 @@ Flujo recomendado en cada sesión:
    - Timeframes van como enteros (ej. H1=16385); símbolos deben coincidir exactamente con el Market Watch de la cuenta (incluir sufijos si existen).
    - Cada vez que se cambie de instancia/credencial, asegurarse de usar/crear el .set dentro de esa instancia, no en otra carpeta.
    - Mapas de Optimization en .ini: 0 = slow complete (búsqueda exhaustiva), 1 = fast genetic, 2 = all symbols in Market Watch. Para single run dejar la línea `Optimization` vacía o comentada y asegurarse de que el .set no tenga flags `Y`.
+   - Por defecto, configurar los flags de optimización en `Y` para los parámetros numéricos/bool que puedan optimizarse; usar `N` sólo si el usuario lo pide explícitamente.
 
 Tono y ritmo:
 - Ir despacio, ser muy claro para usuarios nuevos.
