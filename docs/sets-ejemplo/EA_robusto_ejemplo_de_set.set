@@ -1,6 +1,4 @@
 ; Ejemplo de .set para un EA robusto (formato completo)
-; Copiar a: 00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/
-
 ; Strings: sin rango; vacío usa lo definido en .ini
 InpSymbol=
 ; Timeframe en entero MT5 (ej. H1=16385). Aquí fijo

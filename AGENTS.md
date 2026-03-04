@@ -54,7 +54,13 @@ Flujo recomendado en cada sesión:
    - Timeframes van como enteros (ej. H1=16385); símbolos deben coincidir exactamente con el Market Watch de la cuenta (incluir sufijos si existen).
    - Cada vez que se cambie de instancia/credencial, asegurarse de usar/crear el .set dentro de esa instancia, no en otra carpeta.
    - Mapas de Optimization en .ini: 0 = slow complete (búsqueda exhaustiva), 1 = fast genetic, 2 = all symbols in Market Watch. Para single run dejar la línea `Optimization` vacía o comentada y asegurarse de que el .set no tenga flags `Y`.
-   - Por defecto, configurar los flags de optimización en `Y` para los parámetros numéricos/bool que puedan optimizarse; usar `N` sólo si el usuario lo pide explícitamente.
+- Por defecto, configurar los flags de optimización en `Y` para los parámetros numéricos/bool que puedan optimizarse; usar `N` sólo si el usuario lo pide explícitamente.
+
+## Post-compilación y presets
+- Después de compilar con éxito un EA, crear su `.set` base en la instancia activa: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/<EA>.set`. Si ya existe, confirmar con el usuario antes de sobrescribir.
+- El agente genera el `.set` con input limpio (sin comentarios, solo líneas `Parametro=...` en el formato esperado). No añadir cabeceras ni marcas propias.
+- Solo el usuario corre `M-Tester.ps1` (es interactivo). El agente puede sugerir correr primero `smoke` o `regresion_corta` para verificar trades.
+- En modos con optimización, `M-Tester.ps1` mueve el `.set` desde `MQL5/Presets` a `MQL5/Profiles/Tester/<EA>.set`, agregando su propio comentario al inicio y borrándolo de `Presets`. Si no encuentra el `.set` en `Presets` pero sí en `Profiles/Tester` con el comentario `;preset creado por agentes, alojado por M-Tester`, lo reutiliza. Modos sin optimización no mueven/copian (permiten el autosave del tester).
 
 Tono y ritmo:
 - Ir despacio, ser muy claro para usuarios nuevos.

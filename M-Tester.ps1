@@ -66,6 +66,9 @@ if (-not $terminalExe -or -not (Test-Path $terminalExe)) {
     exit 1
 }
 
+$presetsDir = Join-Path $cred.ruta_instancia 'instalacion/MQL5/Presets'
+$testerDir  = Join-Path $cred.ruta_instancia 'instalacion/MQL5/Profiles/Tester'
+
 if (-not (Test-Path $configPath)) {
     Write-Host "No se encontró $configPath. Asegurate de tener plantilla_funcional.ini en Tools/EXEC-INI." -ForegroundColor Red
     exit 1
@@ -207,6 +210,53 @@ switch ($modeNorm) {
 if (-not (Test-Path $tplToUse)) {
     Write-Host "No encontré la plantilla para modo $mode en $tplToUse. Revisá B_Plantillas." -ForegroundColor Red
     exit 1
+}
+
+# Preparar preset para modos con optimización
+$modesNeedPreset = @("genetica","genetica_fw50","brute","all_symbols")
+if($modesNeedPreset -contains $modeNorm){
+    if(-not (Test-Path $presetsDir)){
+        try {
+            New-Item -ItemType Directory -Path $presetsDir -Force | Out-Null
+            Write-Host "Creada carpeta de presets: $presetsDir" -ForegroundColor DarkGray
+        } catch {
+            Write-Host ("No se pudo crear carpeta de presets en {0}: {1}" -f $presetsDir, $_) -ForegroundColor Red
+            exit 1
+        }
+    }
+    $presetPath = Join-Path $presetsDir "$eaNameNoExt.set"
+    if(-not (Test-Path $testerDir)){
+        try { New-Item -ItemType Directory -Path $testerDir -Force | Out-Null } catch {}
+    }
+    $testerSetPath = Join-Path $testerDir "$eaNameNoExt.set"
+    $skipCopy = $false
+
+    if(-not (Test-Path $presetPath)){
+        if(Test-Path $testerSetPath){
+            $firstLine = Get-Content -Path $testerSetPath -First 1 -ErrorAction SilentlyContinue
+            if($firstLine -like ";preset creado por agentes, alojado por M-Tester*"){
+                Write-Host "Preset ya está en Tester con comentario; usando el existente." -ForegroundColor DarkGray
+                $skipCopy = $true
+            }
+        }
+        if(-not $skipCopy){
+            Write-Host "Falta preset requerido en $presetPath. Crealo en MQL5/Presets y reintenta." -ForegroundColor Red
+            exit 1
+        }
+    }
+    if(-not $skipCopy){
+        try {
+            $presetContent = Get-Content -Raw $presetPath -ErrorAction Stop
+            $commentLine   = ";preset creado por agentes, alojado por M-Tester"
+            $outContent    = $commentLine + "`r`n" + $presetContent
+            Set-Content -Path $testerSetPath -Value $outContent -Encoding UTF8
+            Remove-Item -Path $presetPath -Force
+            Write-Host "Preset movido a Tester: $presetPath -> $testerSetPath (comentado)" -ForegroundColor DarkGray
+        } catch {
+            Write-Host "No se pudo mover el preset a Tester: $($_)" -ForegroundColor Red
+            exit 1
+        }
+    }
 }
 
 # Reemplaza placeholders en todas las plantillas (credenciales + EA) para mantenerlas al día
