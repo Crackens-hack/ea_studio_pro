@@ -11,10 +11,10 @@ Cómo trabajamos
 
 Principios
 - IA + humano: la IA propone y ejecuta tareas acotadas; el humano valida credenciales, decide modos de prueba y lanza scripts sensibles.
-- Transparencia: cada cambio queda documentado en los archivos de referencia (`AGENTS.md`, `01_documentacion_de_referencia/`).
+- Transparencia: cada cambio queda documentado en los archivos de referencia (`AGENTS.md`, `docs/`).
 - Calidad: siempre incluir `OnTester` con métricas clave (PF, DD, winrate, payoff, RR, Sharpe/Sortino cuando aplique).
 
 Dónde mirar primero
 - `AGENTS.md`: flujo operativo y reglas de seguridad (credenciales, compilación, backtesting).
-- `01_documentacion_de_referencia/backtesting-modos/`: plantillas .ini y guía de modos.
-- `01_documentacion_de_referencia/sets-ejemplo/`: ejemplos de `.set` (formato y convenciones).
+- `docs/backtesting-modos/`: plantillas .ini y guía de modos.
+- `docs/sets-ejemplo/`: ejemplos de `.set` (formato y convenciones).

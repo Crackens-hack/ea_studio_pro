@@ -27,8 +27,8 @@ Flujo recomendado en cada sesión:
    - Al archivar EAs antiguos, archivar también el respectivo `<nombre>_teoria.md` para mantener contexto histórico.
 
 4) Referencias y calidad de código:
-   - Antes o durante la elaboración del EA, puede consultar `01_documentacion_de_referencia` y `docs` para buscar includes, convenciones y ejemplos que mejoren la calidad.
-   - Si aparece un error que no reconoce, revisar primero los logs y luego la documentación de referencia antes de pedir más datos al usuario.
+   - Antes o durante la elaboración del EA, puede consultar `docs` para buscar includes, convenciones y ejemplos que mejoren la calidad.
+   - Si aparece un error que no reconoce, revisar primero los logs y luego la documentación en `docs` antes de pedir más datos al usuario.
 
 5) Métricas y OnTester (siempre incluir):
    - Implementar `OnTester()` en todos los EAs generados, salvo que el usuario pida explícitamente no hacerlo.
@@ -39,7 +39,7 @@ Flujo recomendado en cada sesión:
 6) Backtesting (M-Tester.ps1):
    - Sugerir al usuario el modo de prueba (single, preset/.set, optimización, forward, visual, fechas, símbolo, modelado, spread, etc.), pero **no ejecutar `M-Tester.ps1`** ni pedir permiso para ejecutarlo. El usuario decide y lo corre.
    - No proponer ni crear archivos .ini a menos que el usuario lo pida explícitamente. Se puede sugerir qué valores ajustar si el usuario edita un .ini.
-   - Usar los ejemplos de `01_documentacion_de_referencia/backtesting-modos/*.ini` como referencia para sugerencias, no para crear archivos sin pedido.
+   - Usar los ejemplos de `docs/backtesting-modos/*.ini` como referencia para sugerencias, no para crear archivos sin pedido.
    - Si el usuario comparte resultados/errores de backtest, ayudar a interpretarlos y proponer ajustes; iterar el EA y recompilar según sea necesario.
 
 7) Archivos .set (parámetros de tester/optimización):
