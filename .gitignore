@@ -2,3 +2,4 @@
 *.dll
 .env
 docs/
+Tools/
