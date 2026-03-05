@@ -439,6 +439,15 @@ elseif ($action -eq '3') {
     $outObj | ConvertTo-Json -Depth 5 | Set-Content -Path $outPath -Encoding UTF8
     Write-Host "Credencial activa guardada en $outPath" -ForegroundColor Green
     Build-Hub -instName $chosen.Instancia -instPath $chosen.Ruta
+    # Mantener solo el hub de la credencial activa para evitar confusión
+    try {
+        $expectedHub = ('{0}_hub' -f $chosen.Instancia)
+        Get-ChildItem -Path $dataRoot -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like '*_hub' -and $_.Name -ne $expectedHub } |
+            ForEach-Object {
+                Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+            }
+    } catch {}
     exit 0
 }
 elseif ($action -eq '4') {
