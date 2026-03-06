@@ -1,13 +1,13 @@
 # ======================================================
-# MTester_v3
+# 02_M-Tester (v3)
 # Strategy Tester Engine para EA Studio
 # ======================================================
 
 $root = Join-Path $env:USERPROFILE "Desktop\.eastudio"
 
-$configFile = Join-Path $root "Tools-V1\EXEC-INI\mtester.conf"
+$configFile = Join-Path $root "Tools\EXEC-INI\mtester.conf"
 $credFile   = Join-Path $root "00_setup\Instancias\credencial_en_uso.json"
-$iniOutput  = Join-Path $root "Tools-V1\\EXEC-INI\\exec.ini"
+$iniOutput  = Join-Path $root "Tools\\EXEC-INI\\exec.ini"
 
 # -----------------------------------------------------
 # FUNCIONES
@@ -147,7 +147,7 @@ $eaDir = Join-Path $instancia "instalacion\MQL5\Experts\Ea_Studio"
 $presetsDir = Join-Path $instancia "instalacion\MQL5\Presets"
 $testerDir  = Join-Path $instancia "instalacion\MQL5\Profiles\Tester"
 $reportDir  = Join-Path $instancia "instalacion\report"
-$templatesDir = Join-Path $root "Tools-V1"
+$templatesDir = Join-Path $root "Tools"
 
 # -----------------------------------------------------
 # CONFIG
@@ -279,7 +279,7 @@ if(-not ($presetContent | Select-String -SimpleMatch ";preset creado por agentes
 
 $txt=$presetContent -join "`n"
 
-Set-Content $tester (";preset movido por MTester_v3`n"+$txt)
+Set-Content $tester (";preset movido por 02_M-Tester`n"+$txt)
 
 Remove-Item $preset
 
