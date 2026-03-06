@@ -7,7 +7,8 @@ $repoRoot  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $credPath  = Join-Path $repoRoot '00_setup/Instancias/credencial_en_uso.json'
 $sourceDir = Join-Path $repoRoot 'BUILD/01_ea_construccion'
 $archiveDir= Join-Path $sourceDir 'archivados'
-$logDir    = Join-Path $repoRoot 'Compilacion/logs'
+$logRoot  = Join-Path $repoRoot 'Compilacion'
+$logDir    = Join-Path $logRoot 'logs'
 
 if (-not (Test-Path $credPath)) { throw "No existe $credPath. Ejecutá .\\00_setup\\Instalador.ps1 (opción 3) para generar credencial_en_uso.json." }
 $cred = Get-Content $credPath -Raw | ConvertFrom-Json
@@ -19,6 +20,9 @@ if (-not (Test-Path $eaStudioDir)) { New-Item -ItemType Directory -Path $eaStudi
 $metaLogSrc  = Join-Path $cred.ruta_instancia 'instalacion/logs/metaeditor.log'
 
 if (-not (Test-Path $sourceDir)) { throw "No existe el directorio fuente: $sourceDir" }
+# Crear carpeta de compilación/logs si no existe
+if (-not (Test-Path $logRoot)) { New-Item -ItemType Directory -Path $logRoot -Force | Out-Null }
+if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
 # -Include requiere -Recurse o comodín en Path; usamos Filter dos veces para evitar falso negativo.
 $files = @()
 $files += Get-ChildItem -Path $sourceDir -File -Filter '*.mq5'  -ErrorAction SilentlyContinue

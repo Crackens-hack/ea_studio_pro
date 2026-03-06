@@ -133,7 +133,28 @@ def summarize_csv(df: pd.DataFrame, conf: dict, is_forward: bool) -> tuple[str, 
             lines.append("No hay pasadas con ese mínimo de trades.")
 
     summary = "\n".join(lines)
-    return summary, df.head(top_n)
+    top_df = df.head(top_n)
+
+    # Estadística avanzada de parámetros Inp* (media, mediana, p25/p75, modo para no numérico)
+    inp_cols = [c for c in top_df.columns if c.startswith("Inp")]
+    if inp_cols and len(top_df):
+        stats_lines = []
+        for c in inp_cols:
+            series_num = pd.to_numeric(top_df[c], errors="coerce")
+            if series_num.notna().any():
+                stats_lines.append(
+                    f"- {c}: media={series_num.mean():.2f} mediana={series_num.median():.2f} p25={series_num.quantile(0.25):.2f} p75={series_num.quantile(0.75):.2f}"
+                )
+            else:
+                # modo para no numéricos/bools
+                mode_vals = top_df[c].mode()
+                mode_display = "|".join(mode_vals.astype(str).tolist()) if not mode_vals.empty else "N/A"
+                stats_lines.append(f"- {c}: modo={mode_display}")
+        if stats_lines:
+            summary += "\n\n[Parámetros (Top {0}) media/mediana/p25/p75 | modo]\n".format(top_n)
+            summary += "\n".join(stats_lines)
+
+    return summary, top_df
 
 
 def analyze_csv(repo_root: Path, conf: dict, clean_root: Path, res_root: Path):
@@ -158,11 +179,8 @@ def analyze_csv(repo_root: Path, conf: dict, clean_root: Path, res_root: Path):
         out_txt.write_text(summary, encoding="utf-8")
         summaries.append(f"{csv_path}:\n{summary}\n")
 
-        # copiar a Informes-Limpios si pasa al menos 1 fila tras filtros
+        # copiar a Informes-Limpios solo el análisis si pasa al menos 1 fila tras filtros
         if len(top_df):
-            dest_csv = clean_root / csv_path.relative_to(res_root)
-            dest_csv.parent.mkdir(parents=True, exist_ok=True)
-            dest_csv.write_bytes(csv_path.read_bytes())
             dest_txt = clean_root / out_txt.relative_to(res_root)
             dest_txt.parent.mkdir(parents=True, exist_ok=True)
             dest_txt.write_bytes(out_txt.read_bytes())
@@ -181,20 +199,32 @@ def load_json(path: Path):
         return None
 
 
-def passes_json_filters(doc: dict, conf: dict) -> bool:
+def passes_json_filters(doc: dict, conf: dict) -> tuple[bool, list[str]]:
     num = doc.get("numeric", {})
+    reasons = []
     try:
-        return all([
-            num.get("total_trades", 0) >= conf["min_trades"],
-            num.get("profit_factor", 0) >= conf["min_pf"],
-            num.get("recovery_factor", 0) >= conf["min_rf"],
-            num.get("equity_dd_rel_pct", 0) <= conf["max_dd_pct"],
-            num.get("net_profit", 0) > conf["min_net_profit"],
-            num.get("profit_trades_pct", 0) >= conf["min_winrate"],
-            num.get("consec_losses_trades", 0) <= conf["max_consec_loss_trades"],
-        ])
-    except Exception:
-        return False
+        if (num.get("total_trades") or 0) < conf["min_trades"]:
+            reasons.append(f"trades<{conf['min_trades']}")
+        if (num.get("profit_factor") or 0) < conf["min_pf"]:
+            reasons.append(f"pf<{conf['min_pf']}")
+        if (num.get("recovery_factor") or 0) < conf["min_rf"]:
+            reasons.append(f"rf<{conf['min_rf']}")
+        ddp = num.get("equity_dd_rel_pct")
+        if ddp is None:
+            ddp = num.get("balance_dd_rel_pct")
+        if ddp is None:
+            ddp = 0
+        if ddp > conf["max_dd_pct"]:
+            reasons.append(f"dd%>{conf['max_dd_pct']}")
+        if (num.get("net_profit") or 0) <= conf["min_net_profit"]:
+            reasons.append(f"net_profit<={conf['min_net_profit']}")
+        if (num.get("profit_trades_pct") or 0) < conf["min_winrate"]:
+            reasons.append(f"winrate<{conf['min_winrate']}")
+        if (num.get("consec_losses_trades") or 0) > conf["max_consec_loss_trades"]:
+            reasons.append(f"consec_losses>{conf['max_consec_loss_trades']}")
+        return len(reasons) == 0, reasons
+    except Exception as e:
+        return False, [f"error:{e}"]
 
 
 def compute_score(doc: dict, conf: dict) -> float:
@@ -222,13 +252,17 @@ def analyze_json(repo_root: Path, conf: dict, clean_root: Path, res_root: Path):
     failed_paths = []
     for path in json_files:
         doc = load_json(path)
-        if doc and passes_json_filters(doc, conf):
+        if not doc:
+            failed_paths.append((path, ["read_error"]))
+            continue
+        ok, reasons = passes_json_filters(doc, conf)
+        if ok:
             doc["_score"] = compute_score(doc, conf)
             doc["_path"] = path
             docs.append(doc)
             passed_paths.append(path)
         else:
-            failed_paths.append(path)
+            failed_paths.append((path, reasons))
 
     docs = sorted(docs, key=lambda d: d["_score"], reverse=True)
     top_n = conf["top_n"]
@@ -265,7 +299,8 @@ def analyze_json(repo_root: Path, conf: dict, clean_root: Path, res_root: Path):
 
     if failed_paths:
         failed_path = res_root / "json_descartados.txt"
-        failed_path.write_text("\n".join(str(p) for p in failed_paths), encoding="utf-8")
+        lines = [f"{p}: {', '.join(r)}" for p, r in failed_paths]
+        failed_path.write_text("\n".join(lines), encoding="utf-8")
         print(f"[INFO] Descartados listados en {failed_path}")
 
 

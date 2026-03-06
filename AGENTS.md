@@ -11,6 +11,10 @@ Flujo recomendado en cada sesión:
    - Si existe, mostrar cuenta y servidor al usuario y preguntar: “¿Querés trabajar con esta credencial?”  
      - Si la credencial no es la correcta: indicar que reejecute `00_setup/Instalador.ps1` opción 3 (o 2+3 si necesita cargar otra) y detenerse hasta que confirme.
      - Si no existe el archivo: pedir que ejecute `00_setup/Instalador.ps1` y siga opciones 2 y 3. El agente no lo ejecuta.
+   - Antes de usar scripts (compilar/normalizar), si no hay venv, sugerir al usuario crearlo e instalar dependencias de `00_setup/requirements.txt`:
+     - `python -m venv .venv`
+     - `.\.venv\Scripts\activate`
+     - `pip install -r 00_setup/requirements.txt`
 
 2) Preparar EA (el agente es quien genera/edita código MQL5):
    - Explicar que los .mq5/.mql5 van en `BUILD/01_ea_construccion`.
@@ -83,6 +87,15 @@ Flujo recomendado en cada sesión:
 - Cada `_teoria.md` debe incluir un bloque “Expectativa demo/vivo” con: PF, RF, winrate, payoff, DD% esperado, número de trades/mes y horizonte de evaluación, más riesgos conocidos (rango de rachas negativas). Mantenerlo actualizado tras cada optimización relevante.
 - Notar: `.eastudio` es el taller de fabricación/experimentación; el seguimiento en vivo se llevará en un repo aparte (cuando exista). Aquí los EAs deben quedar con expectativas realistas de rendimiento y riesgos (drawdowns esperables documentados).
 - Al mover un EA a `BUILD/03_PORTAFOLIO`, el agente debe verificar/insertar el bloque “Expectativa demo/vivo” en su `_teoria.md`. Si falta, copiar la sección desde `BUILD/03_PORTAFOLIO/teoria_template.md` y completarla con las métricas más recientes.
+
+## Normalización y análisis de resultados
+- `script/A_Normalizador_Master.py` genera la carpeta `Res/` con:
+  - XML → CSV (estructura replicada de `reports`).
+  - HTM → MD + JSON y copia del HTM (misma estructura).
+- `script/B_Analista_Profesional.py` genera la carpeta `Informes-Limpios/` con lo que pasa los filtros:
+  - CSV: aplica filtros de `analisis_conf.json["csv"]`, genera `_analysis.txt` y solo copia los análisis aprobados (no duplica CSV).
+  - JSON (de HTM normalizados): aplica filtros/score de `analisis_conf.json["json"]`, genera `json_analysis.txt`, copia JSON/MD/HTM aprobados y lista descartes con motivo en `Res/json_descartados.txt`.
+- El agente debe ajustar los umbrales en `script/analisis_conf.json` según etapa (exploración/afinado/forward) y usar esos veredictos para decidir si relajar/estrechar rangos, recompilar o descartar el EA.
 
 Tono y ritmo:
 - Ir despacio, ser muy claro para usuarios nuevos.
