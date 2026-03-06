@@ -427,6 +427,16 @@ elseif ($action -eq '3') {
     $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
     $terminalExe    = Get-ChildItem -Path $instalacionDir -Filter 'terminal*.exe'   -ErrorAction SilentlyContinue | Select-Object -First 1
     $metaeditorExe  = Get-ChildItem -Path $instalacionDir -Filter 'metaeditor*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+    $mqlDir         = Join-Path $instalacionDir 'MQL5'
+    $expertsDir     = Join-Path $mqlDir 'Experts'
+    $eaStudioDir    = Join-Path $expertsDir 'Ea_Studio'
+    $presetsDir     = Join-Path $mqlDir 'Presets'
+    $profilesTester = Join-Path $mqlDir 'Profiles/Tester'
+    $reportsDir     = Join-Path $instalacionDir 'report'
+    $logsTerminal   = Join-Path $mqlDir 'Logs'
+    $logsEditor     = Join-Path $instalacionDir 'Logs'
+    $logsTester     = Join-Path $instalacionDir 'Tester/Logs'
+    $agentsRoot     = Join-Path $instalacionDir 'Tester'
     $outPath = Join-Path $instanciasRoot 'credencial_en_uso.json'
     $outObj = [pscustomobject]@{
         instancia = $chosen.Instancia
@@ -434,9 +444,22 @@ elseif ($action -eq '3') {
         credencial = $c
         terminal_exe = if($terminalExe){ $terminalExe.FullName } else { $null }
         metaeditor_exe = if($metaeditorExe){ $metaeditorExe.FullName } else { $null }
+        rutas = [pscustomobject]@{
+            instalacion     = $instalacionDir
+            mql5            = $mqlDir
+            experts         = $expertsDir
+            ea_studio       = $eaStudioDir
+            presets         = $presetsDir
+            profiles_tester = $profilesTester
+            reports         = $reportsDir
+            logs_terminal   = $logsTerminal
+            logs_editor     = $logsEditor
+            logs_tester     = $logsTester
+            tester_agents   = $agentsRoot
+        }
         fecha_seleccion = (Get-Date).ToString('s')
     }
-    $outObj | ConvertTo-Json -Depth 5 | Set-Content -Path $outPath -Encoding UTF8
+    $outObj | ConvertTo-Json -Depth 6 | Set-Content -Path $outPath -Encoding UTF8
     Write-Host "Credencial activa guardada en $outPath" -ForegroundColor Green
     Build-Hub -instName $chosen.Instancia -instPath $chosen.Ruta
     # Mantener solo el hub de la credencial activa para evitar confusión
