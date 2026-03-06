@@ -16,12 +16,16 @@ Flujo recomendado en cada sesión:
    - Explicar que los .mq5/.mql5 van en `BUILD/01_ea_construccion`.
    - Ofrecer crear un EA nuevo según reglas del usuario o editar uno existente.
    - Cada EA debe acompañarse con un archivo de teoría `BUILD/01_ea_construccion/<nombre>_teoria.md` describiendo lógica, entradas/salidas, gestión de riesgo y parámetros clave.
-   - No crear plantillas .ini de backtesting salvo que el usuario lo pida explícitamente. Sólo generar el .set en la instancia activa.
+   - Si el EA necesita iteraciones/mejoras, moverlo (con su `_teoria.md` y, si aplica, .set) a `BUILD/02_ea_mejorar` y usar `03_Recompilador.ps1` para las siguientes compilaciones. En `02_ea_mejorar` también se archiva automáticamente el EA menos reciente para evitar sobrescrituras.
+   - Futuro flujo: al consolidar mejoras, los EAs listos para pruebas combinadas pasarán a `BUILD/03_portfolio` (criterios a definir: estabilidad forward, métricas mínimas y convergencia de optimizaciones).
+- No crear plantillas .ini de backtesting salvo que el usuario lo pida explícitamente. Sólo generar el .set en la instancia activa.
    - Flujo después de crear el EA y el .set: **preguntar si compilar y preferentemente compilar el agente** (ejecutando `01_Compilador.ps1` si el usuario lo autoriza). No saltar directo a backtests hasta completar la compilación.
 
 3) Compilar:
    - Preguntar si el usuario quiere que el agente ejecute `01_Compilador.ps1`; sólo ejecutarlo si el usuario lo autoriza explícitamente. La expectativa por defecto es que el agente compile, pero debe solicitar permiso antes.
     - Si lo prefiere hacer manual: indicar `powershell -ExecutionPolicy Bypass -File .\\01_Compilador.ps1`.
+   - Para EAs en iteración dentro de `BUILD/02_ea_mejorar`, usar `03_Recompilador.ps1` (mismo flujo de logs en `Compilacion/logs` y copia a `Experts/Ea_Studio`).
+   - Promoción a portfolio: los agentes deciden el pase a `BUILD/03_PORTAFOLIO` cuando el EA cumple criterios mínimos (ver sección Portfolio más abajo) y la teoría/presets están actualizados. Mantener una copia histórica en `02_ea_mejorar/archivados` antes de mover.
     - Tras compilar, revisar `Compilacion/logs` y confirmar que el `.ex5` se copió a `00_setup/Instancias/<instancia>/instalacion/MQL5/Experts/Ea_Studio`.
    - Si hay errores/advertencias: leer el log, corregir el .mq5 y volver a compilar hasta que quede limpio. El agente es responsable de iterar.
    - Al archivar EAs antiguos, archivar también el respectivo `<nombre>_teoria.md` para mantener contexto histórico.
@@ -66,6 +70,19 @@ Flujo recomendado en cada sesión:
 - El agente genera el `.set` con input limpio (sin comentarios, solo líneas `Parametro=...` en el formato esperado). No añadir cabeceras ni marcas propias.
 - Solo el usuario corre `M-Tester.ps1` (es interactivo). El agente puede sugerir correr primero `smoke` o `regresion_corta` para verificar trades.
 - En modos con optimización, `M-Tester.ps1` mueve el `.set` desde `MQL5/Presets` a `MQL5/Profiles/Tester/<EA>.set`, agregando su propio comentario al inicio y borrándolo de `Presets`. Si no encuentra el `.set` en `Presets` pero sí en `Profiles/Tester` con el comentario `;preset creado por agentes`, lo reutiliza. Modos sin optimización no mueven/copian (permiten el autosave del tester).
+
+## Portfolio (BUILD/03_PORTAFOLIO)
+- Objetivo: reunir EAs listos para pruebas combinadas/demo en carpetas separadas (`BUILD/03_PORTAFOLIO/<EA>/`).
+- Criterios mínimos (versión 1):
+  - Forward válido: PF >= 1.3, RF >= 1.0, resultado > 0; ratio forward/back >= 0.8.
+  - Robustez: >= 200 trades (o >= 100 si intradía con spreads bajos), DD% relativo <= 25%.
+  - Estabilidad de parámetros: variaciones ±10–15% mantienen PF/RF dentro de -10% del mejor set.
+  - Código y docs: `OnTester` implementado, teoría al día, presets en instancia activa, logs limpios.
+  - Recencia: optimización/ajustes no mayores a 30 días.
+- Antes de mover: archivar la versión previa en `02_ea_mejorar/archivados`. Copiar `_teoria.md` y `.set` junto con el `.mq5/.ex5`.
+- Cada `_teoria.md` debe incluir un bloque “Expectativa demo/vivo” con: PF, RF, winrate, payoff, DD% esperado, número de trades/mes y horizonte de evaluación, más riesgos conocidos (rango de rachas negativas). Mantenerlo actualizado tras cada optimización relevante.
+- Notar: `.eastudio` es el taller de fabricación/experimentación; el seguimiento en vivo se llevará en un repo aparte (cuando exista). Aquí los EAs deben quedar con expectativas realistas de rendimiento y riesgos (drawdowns esperables documentados).
+- Al mover un EA a `BUILD/03_PORTAFOLIO`, el agente debe verificar/insertar el bloque “Expectativa demo/vivo” en su `_teoria.md`. Si falta, copiar la sección desde `BUILD/03_PORTAFOLIO/teoria_template.md` y completarla con las métricas más recientes.
 
 Tono y ritmo:
 - Ir despacio, ser muy claro para usuarios nuevos.
