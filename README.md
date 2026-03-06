@@ -6,7 +6,7 @@ Cómo trabajamos
 - Ideación asistida por IA: definir lógica, métricas y criterios de fitness antes de escribir código.
 - Desarrollo de EA: la IA genera/edita `.mq5` en `BUILD/01_ea_construccion`.
 - Compilación y despliegue: scripts de la carpeta raíz (`Compilador.ps1`, etc.) copian el `.ex5` a la instancia activa.
-- Backtesting y optimización: `Tools/EXEC-INI/plantilla_funcional.ini` + `.set` en `MQL5/Profiles/Tester` controlan los runs; el usuario elige modo, fechas y símbolos.
+- Backtesting y optimización: `MTester_V3.ps1` genera `Tools-V1/EXEC-INI/exec.ini` a partir de `mtester.conf` y las mini plantillas `Tools-V1/<modo>.ini`; el usuario elige modo, fechas y símbolos. El `.set` debe estar en `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` con primera línea `;preset creado por agentes`.
 - Iteración sobre resultados: leer logs, ajustar parámetros/código, repetir hasta obtener métricas limpias.
 
 Principios

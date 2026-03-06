@@ -271,17 +271,35 @@ $tester=Join-Path $testerDir $set
 
 if(Test-Path $preset){
 
-$txt=Get-Content $preset -Raw
+$presetContent = Get-Content $preset
+if(-not ($presetContent | Select-String -SimpleMatch ";preset creado por agentes")){
+    Write-Host "El preset en Presets/$set no contiene ';preset creado por agentes'. Abortando."
+    exit 1
+}
+
+$txt=$presetContent -join "`n"
 
 Set-Content $tester (";preset movido por MTester_v3`n"+$txt)
 
 Remove-Item $preset
 
 }
- elseif(-not (Test-Path $tester)){
-    Write-Host "Preset $set no existe en Presets ni en Profiles/Tester. Se continuará sin preset."
-    $set=""
- }
+elseif(-not (Test-Path $tester)){
+    Write-Host "Modo requiere preset y no se encontró $set ni en Presets ni en Profiles/Tester. Abortando."
+    exit 1
+}
+else {
+    # tester tiene algo; validar que sea un preset válido de agentes (no autosave)
+    $testerLines = Get-Content $tester
+    if($testerLines[0].Trim() -like "; saved automatically on*"){
+        Write-Host "Se halló $set en Profiles/Tester pero es un autosave ('; saved automatically on ...'). Abortando: se necesita un preset limpio en Presets."
+        exit 1
+    }
+    if(-not ($testerLines | Select-String -SimpleMatch ";preset creado por agentes")){
+        Write-Host "Se halló $set en Profiles/Tester pero no contiene ';preset creado por agentes'. Abortando."
+        exit 1
+    }
+}
 }
 
 # -----------------------------------------------------

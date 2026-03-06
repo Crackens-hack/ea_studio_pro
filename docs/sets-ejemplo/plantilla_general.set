@@ -1,5 +1,5 @@
 ; Plantilla general de .set para MT5 (tester/optimización)
-; Copiar a: 00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/
+; 
 ; Reglas rápidas:
 ; - Strings: solo `Parametro=valor` (sin rangos). Dejar vacío para usar lo que diga el .ini
 ; - Numéricos/bools/enums: `Parametro=defecto||inicio||paso||fin||Y|N` (Y=optimiza, N=fijo)
