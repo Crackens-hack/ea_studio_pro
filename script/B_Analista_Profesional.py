@@ -82,8 +82,8 @@ def load_conf(repo_root: Path) -> dict:
 
 
 def ensure_dirs(repo_root: Path) -> tuple[Path, Path]:
-    res_root = repo_root / "Res"
-    clean_root = repo_root / "Informes-Limpios"
+    res_root = repo_root / "RESULTADOS" / "Reportes-Normalizados"
+    clean_root = repo_root / "RESULTADOS" / "Reportes-Analizados"
     clean_root.mkdir(parents=True, exist_ok=True)
     return res_root, clean_root
 
@@ -142,6 +142,9 @@ def summarize_csv(df: pd.DataFrame, conf: dict, is_forward: bool) -> tuple[str, 
         for c in inp_cols:
             series_num = pd.to_numeric(top_df[c], errors="coerce")
             if series_num.notna().any():
+                # Forzar a float para evitar TypeError en quantile() con numpy 2.x si es booleano
+                if series_num.dtype == bool:
+                    series_num = series_num.astype(float)
                 stats_lines.append(
                     f"- {c}: media={series_num.mean():.2f} mediana={series_num.median():.2f} p25={series_num.quantile(0.25):.2f} p75={series_num.quantile(0.75):.2f}"
                 )
@@ -186,8 +189,10 @@ def analyze_csv(repo_root: Path, conf: dict, clean_root: Path, res_root: Path):
             dest_txt.write_bytes(out_txt.read_bytes())
 
     if summaries:
-        (res_root / "csv_analysis.txt").write_text("\n".join(summaries), encoding="utf-8")
-        print("[OK] csv_analysis.txt generado y CSV aprobados copiados a Informes-Limpios.")
+        analysis_dir = clean_root / "1_No_Pasan_Filtros"
+        analysis_dir.mkdir(parents=True, exist_ok=True)
+        (analysis_dir / "csv_analysis.txt").write_text("\n".join(summaries), encoding="utf-8")
+        print("[OK] csv_analysis.txt generado y análisis CSV aprobados copiados a Reportes-Analizados.")
 
 
 # ------------------ JSON ------------------ #
@@ -276,7 +281,9 @@ def analyze_json(repo_root: Path, conf: dict, clean_root: Path, res_root: Path):
             payoff = abs((num.get("avg_profit", 0) or 0) / num.get("avg_loss"))
         lines.append(f"- {d.get('expert')} {d.get('symbol')} Score={d['_score']:.4f} PF={num.get('profit_factor')} RF={num.get('recovery_factor')} DD%={num.get('equity_dd_rel_pct')} WR%={num.get('profit_trades_pct')} Payoff≈{payoff} Trades={num.get('total_trades')} OnTester={num.get('on_tester')}")
 
-    out_path = res_root / "json_analysis.txt"
+    analysis_dir = clean_root / "1_No_Pasan_Filtros"
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+    out_path = analysis_dir / "json_analysis.txt"
     out_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] json_analysis.txt generado.")
 
@@ -298,7 +305,7 @@ def analyze_json(repo_root: Path, conf: dict, clean_root: Path, res_root: Path):
             htm_dest.write_bytes(htm_src.read_bytes())
 
     if failed_paths:
-        failed_path = res_root / "json_descartados.txt"
+        failed_path = analysis_dir / "json_descartados.txt"
         lines = [f"{p}: {', '.join(r)}" for p, r in failed_paths]
         failed_path.write_text("\n".join(lines), encoding="utf-8")
         print(f"[INFO] Descartados listados en {failed_path}")

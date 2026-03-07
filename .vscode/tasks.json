@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Normalizador (reports → Reportes-Normalizados)",
+      "type": "shell",
+      "command": "python",
+      "args": ["script/A_Normalizador_Master.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Analista (Reportes-Analizados)",
+      "type": "shell",
+      "command": "python",
+      "args": ["script/B_Analista_Profesional.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Limpiar RESULTADOS",
+      "type": "shell",
+      "command": "python",
+      "args": ["script/Clear.py"],
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -9,6 +9,7 @@ $expectedRoot     = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
 $instanciasRoot   = Join-Path $expectedRoot '00_setup/Instancias'
 $defaultInstaller = Join-Path $expectedRoot '00_setup/bin/mt5setup.exe'
 $dataRoot         = Join-Path $expectedRoot 'DATA'
+$resultadosRoot   = Join-Path $expectedRoot 'RESULTADOS'
 
 function Get-CredentialKeys {
     param($creds)
@@ -223,14 +224,14 @@ function Build-Hub {
     $mqlDir      = Join-Path $instalacion 'MQL5'
 
     $links = @(
-        @{ name='credencial.json'; target=$credPath },
-        @{ name='ea_studio';      target=Join-Path $mqlDir 'Experts/Ea_Studio' },
-        @{ name='presets';        target=Join-Path $mqlDir 'Presets' },
-        @{ name='profiles_tester';target=Join-Path $mqlDir 'Profiles/Tester' },
-        @{ name='reports';        target=Join-Path $instalacion 'report' },
-        @{ name='trace_terminal'; target=Join-Path $mqlDir 'Logs' },
-        @{ name='trace_editor';   target=Join-Path $instalacion 'Logs' },
-        @{ name='trace_tester';   target=Join-Path $instalacion 'Tester/Logs' }
+        @{ name='credencial.json';               target=$credPath },
+        # Carpeta con los .ex5 ya compilados dentro del terminal
+        @{ name='Asesores_Expertos(En Terminal)'; target=Join-Path $mqlDir 'Experts/Ea_Studio' },
+        @{ name='presets';                       target=Join-Path $mqlDir 'Presets' },
+        @{ name='profiles_tester';               target=Join-Path $mqlDir 'Profiles/Tester' },
+        @{ name='LOGS_Terminal';                 target=Join-Path $mqlDir 'Logs' },
+        @{ name='LOGS_Editor';                   target=Join-Path $instalacion 'Logs' },
+        @{ name='LOGS_Tester';                   target=Join-Path $instalacion 'Tester/Logs' }
     )
 
     foreach($l in $links){
@@ -241,7 +242,7 @@ function Build-Hub {
 
     # trace_agents: crear contenedor y symlinks a cada Agent-*/logs
     $agentsRoot = Join-Path $instalacion 'Tester'
-    $hubAgents  = Join-Path $hubPath 'trace_agents'
+    $hubAgents  = Join-Path $hubPath 'LOGS_Agents'
     if(Test-Path $hubAgents){ Remove-Item -Path $hubAgents -Force -Recurse -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Path $hubAgents -Force | Out-Null
     if(Test-Path $agentsRoot){
@@ -254,6 +255,20 @@ function Build-Hub {
             }
         }
     }
+
+    # En RESULTADOS, crear link a report original de la instancia activa
+    try {
+        if (-not (Test-Path $resultadosRoot)) { New-Item -ItemType Directory -Path $resultadosRoot -Force | Out-Null }
+        # Carpetas listas para pipeline (no son symlink)
+        foreach($d in @('Reportes-Analizados','Reportes-Normalizados')){
+            $full = Join-Path $resultadosRoot $d
+            if(-not (Test-Path $full)){ New-Item -ItemType Directory -Path $full -Force | Out-Null }
+        }
+        # Enlace a reportes crudos
+        $linkReportes = Join-Path $resultadosRoot 'Reportes-SinProcesar'
+        if (Test-Path $linkReportes) { Remove-Item -Path $linkReportes -Force -Recurse -ErrorAction SilentlyContinue }
+        New-LinkForce -Path $linkReportes -Target (Join-Path $instalacion 'report')
+    } catch {}
 }
 
 Assert-Location
@@ -261,6 +276,89 @@ Assert-Location
 # Asegurar carpeta DATA en raíz
 if (-not (Test-Path $dataRoot)) {
     try { New-Item -ItemType Directory -Path $dataRoot -Force | Out-Null } catch {}
+}
+if (-not (Test-Path $resultadosRoot)) {
+    try { New-Item -ItemType Directory -Path $resultadosRoot -Force | Out-Null } catch {}
+}
+# Asegurar .vscode/tasks.json con atajos básicos si no existe
+$vscodeDir   = Join-Path $expectedRoot '.vscode'
+$tasksPath   = Join-Path $vscodeDir 'tasks.json'
+$keysPath    = Join-Path $vscodeDir 'keybindings.json'
+if (-not (Test-Path $vscodeDir)) {
+    try { New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null } catch {}
+}
+if (-not (Test-Path $tasksPath)) {
+    $tasksContent = @'
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Normalizador (reports → Reportes-Normalizados)",
+      "type": "shell",
+      "command": "python",
+      "args": ["script/A_Normalizador_Master.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Analista (Reportes-Analizados)",
+      "type": "shell",
+      "command": "python",
+      "args": ["script/B_Analista_Profesional.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Limpiar RESULTADOS",
+      "type": "shell",
+      "command": "python",
+      "args": ["script/Clear.py"],
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    }
+  ]
+}
+'@
+    try { Set-Content -Path $tasksPath -Value $tasksContent -Encoding UTF8 }
+    catch { Write-Host "No se pudo crear .vscode/tasks.json: $_" -ForegroundColor Yellow }
+}
+# Crear keybindings solo si no existe para no pisar ajustes del usuario
+if (-not (Test-Path $keysPath)) {
+    $keysContent = @'
+[
+  {
+    "key": "alt+t",
+    "command": "workbench.action.tasks.runTask",
+    "when": "editorTextFocus || terminalFocus || explorerViewletVisible"
+  },
+  {
+    "key": "ctrl+alt+shift+n",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Normalizador (reports → Reportes-Normalizados)"
+  },
+  {
+    "key": "ctrl+alt+shift+a",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Analista (Reportes-Analizados)"
+  },
+  {
+    "key": "ctrl+alt+shift+c",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Limpiar RESULTADOS"
+  }
+]
+'@
+    try {
+        Set-Content -Path $keysPath -Value $keysContent -Encoding UTF8
+        Write-Host "Atajos Ctrl+Alt+Shift+N/A/C creados en .vscode/keybindings.json." -ForegroundColor Green
+    } catch {
+        Write-Host "No se pudo crear .vscode/keybindings.json: $_" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host ".vscode/keybindings.json ya existe; no se modificó. Si querés otras teclas, edita manualmente ese archivo." -ForegroundColor DarkGray
 }
 $instances = Get-Instances -creds $null
 
@@ -470,6 +568,18 @@ elseif ($action -eq '3') {
             ForEach-Object {
                 Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
             }
+        # Limpiar Reportes-SinProcesar si apunta a otra instancia
+        $linkReportes = Join-Path $resultadosRoot 'Reportes-SinProcesar'
+        if (Test-Path $linkReportes) {
+            Remove-Item -Path $linkReportes -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        # Asegurar carpetas base en RESULTADOS (sin symlink)
+        foreach($d in @('Reportes-Analizados','Reportes-Normalizados')){
+            $full = Join-Path $resultadosRoot $d
+            if(-not (Test-Path $full)){ New-Item -ItemType Directory -Path $full -Force | Out-Null }
+        }
+        # Recrear link a reports de la instancia activa
+        New-LinkForce -Path $linkReportes -Target (Join-Path $instalacionDir 'report')
     } catch {}
     exit 0
 }

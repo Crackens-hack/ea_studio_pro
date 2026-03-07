@@ -89,12 +89,13 @@ Flujo recomendado en cada sesión:
 - Al mover un EA a `BUILD/03_PORTAFOLIO`, el agente debe verificar/insertar el bloque “Expectativa demo/vivo” en su `_teoria.md`. Si falta, copiar la sección desde `BUILD/03_PORTAFOLIO/teoria_template.md` y completarla con las métricas más recientes.
 
 ## Normalización y análisis de resultados
-- `script/A_Normalizador_Master.py` genera la carpeta `Res/` con:
+- `script/A_Normalizador_Master.py` genera la carpeta `RESULTADOS/Reportes-Normalizados` con:
   - XML → CSV (estructura replicada de `reports`).
   - HTM → MD + JSON y copia del HTM (misma estructura).
-- `script/B_Analista_Profesional.py` genera la carpeta `Informes-Limpios/` con lo que pasa los filtros:
+- `script/B_Analista_Profesional.py` genera la carpeta `RESULTADOS/Reportes-Analizados` con lo que pasa los filtros:
   - CSV: aplica filtros de `analisis_conf.json["csv"]`, genera `_analysis.txt` y solo copia los análisis aprobados (no duplica CSV).
-  - JSON (de HTM normalizados): aplica filtros/score de `analisis_conf.json["json"]`, genera `json_analysis.txt`, copia JSON/MD/HTM aprobados y lista descartes con motivo en `Res/json_descartados.txt`.
+  - JSON (de HTM normalizados): aplica filtros/score de `analisis_conf.json["json"]`, genera `json_analysis.txt`, copia JSON/MD/HTM aprobados y lista descartes con motivo en `RESULTADOS/Reportes-Analizados/1_No_Pasan_Filtros/json_descartados.txt`.
+- `script/Clear.py` ofrece un menú para limpiar `RESULTADOS` (analizados, normalizados, crudos de la instancia o todo). El enlace `RESULTADOS/Reportes-SinProcesar` se conserva siempre.
 - El agente debe ajustar los umbrales en `script/analisis_conf.json` según etapa (exploración/afinado/forward) y usar esos veredictos para decidir si relajar/estrechar rangos, recompilar o descartar el EA.
 
 Tono y ritmo:

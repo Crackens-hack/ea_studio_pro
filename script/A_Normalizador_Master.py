@@ -86,7 +86,7 @@ def convert_xml_to_csv(xml_path: Path, csv_path: Path) -> bool:
 
 def run_xml(repo_root: Path):
     reports_root = load_reports_root(repo_root)
-    out_root = repo_root / "Res"
+    out_root = repo_root / "RESULTADOS" / "Reportes-Normalizados"
     xml_files = sorted(reports_root.rglob("*.xml"))
     if not xml_files:
         print(f"[INFO] No se encontraron XML en {reports_root}")
@@ -284,7 +284,7 @@ def generar_markdown(resumen_set: dict, res: dict, inputs: str) -> str:
 
 def run_htm(repo_root: Path):
     rep_root = load_reports_root(repo_root)
-    out_root = repo_root / "Res"
+    out_root = repo_root / "RESULTADOS" / "Reportes-Normalizados"
 
     htm_files = sorted(rep_root.rglob("*.htm"))
     if not htm_files:
