@@ -57,6 +57,18 @@ function Get-Instances {
     foreach ($d in $dirs) {
         $instalacion   = Join-Path $d.FullName 'instalacion'
         $portableExe   = Get-ChildItem -Path $instalacion -Filter 'terminal*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+        $installerExe  = $null
+        # Primero buscar setup en la carpeta de instancia
+        $installerExe  = Get-ChildItem -Path $d.FullName -Filter '*setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+        # Si no hay, intentar en 00_setup/bin (repositorio de instaladores)
+        if (-not $installerExe -and (Test-Path $installerDir)) {
+            $installerExe = Get-ChildItem -Path $installerDir -Filter '*setup*.exe' -File -ErrorAction SilentlyContinue |
+                            Where-Object { $_.Name -match $d.Name } | Select-Object -First 1
+            if (-not $installerExe) {
+                # fallback: tomar mt5setup.exe como instalador genérico
+                $installerExe = Get-ChildItem -Path $installerDir -Filter 'mt5setup.exe' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+            }
+        }
         $credPath      = Join-Path $instalacion 'credenciales.json'
         $legacyCred    = Join-Path $d.FullName 'credenciales.json'
         if(-not (Test-Path $credPath) -and (Test-Path $legacyCred)){
@@ -76,13 +88,13 @@ function Get-Instances {
             } catch { $valStr = 'Pendiente' }
         }
         [pscustomobject]@{
-            Instancia     = $d.Name
-            Instalacion   = if (Test-Path $instalacion) {'OK'} else {'-'}
-            PortableExe   = if ($portableExe) {$portableExe.Name} else {'(no exe)'}
-            Credenciales  = if ($hasCred) { 'Sí' } else { 'No' }
-            Validada      = $valStr
-            CredPath      = $credPath
-            Ruta          = $d.FullName
+            Instancia    = $d.Name
+            PortableExe  = if ($portableExe) {$portableExe.Name} else {'(no exe)'}
+            Instalador   = if ($installerExe) {$installerExe.Name} else {'(no setup)'}
+            Credenciales = if ($hasCred) { 'Sí' } else { 'No' }
+            Validada     = $valStr
+            CredPath     = $credPath
+            Ruta         = $d.FullName
         }
     }
 }
@@ -119,7 +131,7 @@ function Select-Installer {
         return $path
     }
 
-    Write-Host "Instaladores encontrados en $installerDir:" -ForegroundColor Cyan
+    Write-Host ("Instaladores encontrados en {0}:" -f $installerDir) -ForegroundColor Cyan
     $i = 1
     foreach($f in $exeList){
         $mark = if ($f.Name -ieq 'mt5setup.exe') {'(recomendado)'} else {''}
@@ -256,6 +268,10 @@ function Build-Hub {
     if(Test-Path $hubPath){ Remove-Item -Path $hubPath -Recurse -Force -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Path $hubPath -Force | Out-Null
 
+    $setersRoot = Join-Path $expectedRoot '000_SETERS'
+    if(Test-Path $setersRoot){ Remove-Item -Path $setersRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    New-Item -ItemType Directory -Path $setersRoot -Force | Out-Null
+
     $instalacion = Join-Path $instPath 'instalacion'
     $credPath    = Join-Path $instalacion 'credenciales.json'
     $mqlDir      = Join-Path $instalacion 'MQL5'
@@ -264,15 +280,16 @@ function Build-Hub {
         @{ name='credencial.json';               target=$credPath },
         # Carpeta con los .ex5 ya compilados dentro del terminal
         @{ name='Asesores_Expertos(En Terminal)'; target=Join-Path $mqlDir 'Experts/Ea_Studio' },
-        @{ name='presets';                       target=Join-Path $mqlDir 'Presets' },
-        @{ name='profiles_tester';               target=Join-Path $mqlDir 'Profiles/Tester' },
+        @{ name='PRESETS';                       target=Join-Path $mqlDir 'Presets'; rootLink=$true },
+        @{ name='PROFILE_TESTER';               target=Join-Path $mqlDir 'Profiles/Tester'; rootLink=$true },
         @{ name='LOGS_Terminal';                 target=Join-Path $mqlDir 'Logs' },
         @{ name='LOGS_Editor';                   target=Join-Path $instalacion 'Logs' },
         @{ name='LOGS_Tester';                   target=Join-Path $instalacion 'Tester/Logs' }
     )
 
     foreach($l in $links){
-        $p = Join-Path $hubPath $l.name
+        $basePath = if($l.rootLink){ $setersRoot } else { $hubPath }
+        $p = Join-Path $basePath $l.name
         if(Test-Path $p){ Remove-Item -Path $p -Force -Recurse -ErrorAction SilentlyContinue }
         New-LinkForce -Path $p -Target $l.target
     }
@@ -389,338 +406,251 @@ if (-not (Test-Path $keysPath)) {
 }
 $instances = Get-Instances -creds $null
 
-if (-not $instances) {
-    Write-Host "No hay instancias. Podés crear la primera instalación portable ahora." -ForegroundColor Yellow
-    $nextName = 'instancia_{0:D2}' -f 1
-    $nameInput = Read-Host "Nombre para la nueva instancia (ENTER usa $nextName)"
-    if (-not $nameInput) { $nameInput = $nextName }
-    if(Ensure-PortableInstall -instName $nameInput -installerPath $InstallerPath){
-        Write-Host "Listo. Nueva carpeta: $(Join-Path $instanciasRoot $nameInput)" -ForegroundColor Green
-    } else {
-        Write-Host "Instalación cancelada o fuera de la ruta esperada. Vuelve a ejecutar y elige la carpeta sugerida." -ForegroundColor Yellow
+while ($true) {
+    $instances = Get-Instances -creds $null
+
+    if (-not $instances) {
+        Write-Host "No hay instancias. Podés crear la primera instalación portable ahora." -ForegroundColor Yellow
+        $nextName = 'instancia_{0:D2}' -f 1
+        $nameInput = Read-Host "Nombre para la nueva instancia (ENTER usa $nextName, Q para salir)"
+        if ([string]::IsNullOrWhiteSpace($nameInput)) { $nameInput = $nextName }
+        if ($nameInput -match '^[qQ]$') { break }
+        if(Ensure-PortableInstall -instName $nameInput -installerPath $InstallerPath){
+            Write-Host "Listo. Nueva carpeta: $(Join-Path $instanciasRoot $nameInput)" -ForegroundColor Green
+        } else {
+            Write-Host "Instalación cancelada o fuera de la ruta esperada. Vuelve a ejecutar y elige la carpeta sugerida." -ForegroundColor Yellow
+        }
+        continue
     }
-    Show-KeybindReminder -Created:$keybindingsCreated
-    exit 0
-}
 
-Write-Host "Instancias detectadas en 00_setup/Instancias:`n" -ForegroundColor Cyan
-$instances | Format-Table -AutoSize
+    Write-Host "Instancias detectadas en 00_setup/Instancias:`n" -ForegroundColor Cyan
+    $instances | Format-Table -Property Instancia,PortableExe,Instalador,Credenciales,Validada -AutoSize
 
-$actionPrompt = @"
+    $actionPrompt = @"
 Elige acción:
   [1] Crear nueva instancia portable
   [2] Asignar credenciales a instancia
   [3] Elegir credencial activa
   [4] Reasignar credenciales no validadas
-  [ENTER] Salir
+  [Q/ENTER] Salir
 "@
-$action = Read-Host $actionPrompt
-if ($action -eq '1') {
-    $newName = Read-Host "Nombre para la nueva instancia (ENTER usa siguiente correlativo)"
-    if(-not $newName){ $newName = Get-NextInstanceName }
-    if(Ensure-PortableInstall -instName $newName -installerPath $InstallerPath){
-        Write-Host "Listo. Nueva carpeta: $(Join-Path $instanciasRoot $newName)" -ForegroundColor Green
-    } else {
-        Write-Host "Instalación cancelada o fuera de la ruta esperada. Vuelve a ejecutar y elige la carpeta sugerida." -ForegroundColor Yellow
-    }
-    Show-KeybindReminder -Created:$keybindingsCreated
-    exit 0
-}
-elseif ($action -eq '2') {
-    # instancias sin credenciales.json
-    $sinCred = @($instances | Where-Object { $_.Credenciales -eq 'No' })
-    if (-not $sinCred) {
-        Write-Host "Todas las instancias ya tienen credenciales.json (en instalacion/). Nada que hacer." -ForegroundColor Yellow
-        exit 0
-    }
-    Write-Host "`nInstancias sin credenciales:" -ForegroundColor Cyan
-    $i=1; foreach($inst in $sinCred){ Write-Host ("[{0}] {1} -> {2}" -f $i,$inst.Instancia,$inst.Ruta); $i++ }
-    $sel = Read-Host "Elegí número de instancia"
-    if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $sinCred.Count){
-        Write-Host "Selección inválida." -ForegroundColor Red
-        exit 1
-    }
-    $chosen = $sinCred[[int]$sel - 1]
-    $cuenta = Read-Host "Número de cuenta"
-    $pass   = Read-Host "Contraseña"
-    $server = Read-Host "Servidor"
-    $credObj = [pscustomobject]@{
-        cuenta      = $cuenta
-        password    = $pass
-        servidor    = $server
-        fecha_guardado = (Get-Date).ToString('s')
-        validada    = $false
-        fecha_validacion = $null
-        detalle_validacion = $null
-    }
-    $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
-    if (-not (Test-Path $instalacionDir)) { New-Item -ItemType Directory -Path $instalacionDir -Force | Out-Null }
-    $credPathNew = Join-Path $instalacionDir 'credenciales.json'
-    $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
-    # limpiar legacy si existiera
-    $credLegacy = Join-Path $chosen.Ruta 'credenciales.json'
-    if(Test-Path $credLegacy){ Remove-Item -Path $credLegacy -Force -ErrorAction SilentlyContinue }
-    Write-Host "Credenciales guardadas en $credPathNew" -ForegroundColor Green
-    $terminalExe    = Get-ChildItem -Path $instalacionDir -Filter 'terminal*.exe'   -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($terminalExe) {
-        $openTerm = Read-Host "¿Abrir MT en modo portable para ingresar y validar la credencial ahora? (s/n)"
-        if ($openTerm -match '^[sS]') {
-            Write-Host "Abriendo MT en modo portable para validación..." -ForegroundColor Cyan
-            try {
-                $mtProc = Start-Process -FilePath $terminalExe.FullName -ArgumentList '/portable' -WorkingDirectory $instalacionDir -PassThru -ErrorAction Stop
-            } catch {
-                Write-Host "No se pudo abrir el terminal en modo portable: $_" -ForegroundColor Red
-            }
+    $action = Read-Host $actionPrompt
+    if ([string]::IsNullOrWhiteSpace($action) -or $action -match '^[qQ]$') { break }
 
-            # Espera y lee logs para detectar autorización
-            $logsDir = Join-Path $instalacionDir 'logs'
-            $validated = $false
-            $failed = $false
-            $detalle = $null
-            if(Test-Path $logsDir){
-                $deadline = (Get-Date).AddMinutes(5)
-                while((Get-Date) -lt $deadline -and -not ($validated -or $failed)){
-                    $logFile = Get-ChildItem -Path $logsDir -Filter '*.log' -File -ErrorAction SilentlyContinue |
-                               Where-Object { $_.Name -ne 'metaeditor.log' } |
-                               Sort-Object LastWriteTime -Descending | Select-Object -First 1
-                    if($logFile){
-                        try{
-                            $lines = Get-Content -Path $logFile.FullName -Tail 400 -ErrorAction SilentlyContinue
-                        } catch { $lines = @() }
-                        foreach($ln in $lines){
-                            if($ln -match "authorized on"){
-                                $validated = $true
-                                $detalle = $ln.Trim()
-                                break
-                            }
-                            if($ln -match "authorization on .*failed"){
-                                $failed = $true
-                                $detalle = $ln.Trim()
-                                break
+    if ($action -eq '1') {
+        $newName = Read-Host "Nombre para la nueva instancia (ENTER usa siguiente correlativo)"
+        if(-not $newName){ $newName = Get-NextInstanceName }
+        if(Ensure-PortableInstall -instName $newName -installerPath $InstallerPath){
+            Write-Host "Listo. Nueva carpeta: $(Join-Path $instanciasRoot $newName)" -ForegroundColor Green
+        } else {
+            Write-Host "Instalación cancelada o fuera de la ruta esperada. Vuelve a ejecutar y elige la carpeta sugerida." -ForegroundColor Yellow
+        }
+        continue
+    }
+    elseif ($action -eq '2') {
+        $sinCred = @($instances | Where-Object { $_.Credenciales -eq 'No' })
+        if (-not $sinCred) {
+            Write-Host "Todas las instancias ya tienen credenciales.json (en instalacion/). Nada que hacer." -ForegroundColor Yellow
+            continue
+        }
+        Write-Host "`nInstancias sin credenciales:" -ForegroundColor Cyan
+        $i=1; foreach($inst in $sinCred){ Write-Host ("[{0}] {1} -> {2}" -f $i,$inst.Instancia,$inst.Ruta); $i++ }
+        $sel = Read-Host "Elegí número de instancia (ENTER cancela)"
+        if([string]::IsNullOrWhiteSpace($sel)){ continue }
+        if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $sinCred.Count){
+            Write-Host "Selección inválida." -ForegroundColor Red
+            continue
+        }
+        $chosen = $sinCred[[int]$sel - 1]
+        $cuenta = Read-Host "Número de cuenta"
+        $pass   = Read-Host "Contraseña"
+        $server = Read-Host "Servidor"
+        $credObj = [pscustomobject]@{
+            cuenta      = $cuenta
+            password    = $pass
+            servidor    = $server
+            fecha_guardado = (Get-Date).ToString('s')
+            validada    = $false
+            fecha_validacion = $null
+            detalle_validacion = $null
+        }
+        $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
+        if (-not (Test-Path $instalacionDir)) { New-Item -ItemType Directory -Path $instalacionDir -Force | Out-Null }
+        $credPathNew = Join-Path $instalacionDir 'credenciales.json'
+        $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
+        $credLegacy = Join-Path $chosen.Ruta 'credenciales.json'
+        if(Test-Path $credLegacy){ Remove-Item -Path $credLegacy -Force -ErrorAction SilentlyContinue }
+        Write-Host "Credenciales guardadas en $credPathNew" -ForegroundColor Green
+        $terminalExe    = Get-ChildItem -Path $instalacionDir -Filter 'terminal*.exe'   -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($terminalExe) {
+            $openTerm = Read-Host "¿Abrir MT en modo portable para ingresar y validar la credencial ahora? (s/n)"
+            if ($openTerm -match '^[sS]') {
+                Write-Host "Abriendo MT en modo portable para validación..." -ForegroundColor Cyan
+                try { Start-Process -FilePath $terminalExe.FullName -ArgumentList '/portable' -WorkingDirectory $instalacionDir -PassThru -ErrorAction Stop } catch { Write-Host "No se pudo abrir el terminal en modo portable: $_" -ForegroundColor Red }
+                $logsDir = Join-Path $instalacionDir 'logs'
+                $validated = $false; $failed = $false; $detalle = $null
+                if(Test-Path $logsDir){
+                    $deadline = (Get-Date).AddMinutes(5)
+                    while((Get-Date) -lt $deadline -and -not ($validated -or $failed)){
+                        $logFile = Get-ChildItem -Path $logsDir -Filter '*.log' -File -ErrorAction SilentlyContinue |
+                                   Where-Object { $_.Name -ne 'metaeditor.log' } |
+                                   Sort-Object LastWriteTime -Descending | Select-Object -First 1
+                        if($logFile){
+                            try{ $lines = Get-Content -Path $logFile.FullName -Tail 400 -ErrorAction SilentlyContinue } catch { $lines = @() }
+                            foreach($ln in $lines){
+                                if($ln -match "authorized on"){ $validated = $true; $detalle = $ln.Trim(); break }
+                                if($ln -match "authorization on .*failed"){ $failed = $true; $detalle = $ln.Trim(); break }
                             }
                         }
+                        if(-not ($validated -or $failed)){ Start-Sleep -Seconds 5 }
                     }
-                    if(-not ($validated -or $failed)){ Start-Sleep -Seconds 5 }
                 }
+                if($validated){ Write-Host "Credencial validada: $detalle" -ForegroundColor Green; $credObj.validada = $true; $credObj.fecha_validacion = (Get-Date).ToString('s'); $credObj.detalle_validacion = $detalle }
+                elseif($failed){ Write-Host "Credencial inválida: $detalle" -ForegroundColor Red; $credObj.validada = $false; $credObj.fecha_validacion = (Get-Date).ToString('s'); $credObj.detalle_validacion = $detalle }
+                else { Write-Host "No se pudo confirmar la validación en el log dentro del tiempo de espera." -ForegroundColor Yellow; $credObj.detalle_validacion = "pendiente" }
+                $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
+                Write-Host "Estado de validación guardado en $credPathNew" -ForegroundColor DarkGray
             }
-
-            if($validated){
-                Write-Host "Credencial validada: $detalle" -ForegroundColor Green
-                $credObj.validada = $true
-                $credObj.fecha_validacion = (Get-Date).ToString('s')
-                $credObj.detalle_validacion = $detalle
-            } elseif($failed){
-                Write-Host "Credencial inválida: $detalle" -ForegroundColor Red
-                $credObj.validada = $false
-                $credObj.fecha_validacion = (Get-Date).ToString('s')
-                $credObj.detalle_validacion = $detalle
-            } else {
-                Write-Host "No se pudo confirmar la validación en el log dentro del tiempo de espera." -ForegroundColor Yellow
-                $credObj.detalle_validacion = "pendiente"
+        }
+        continue
+    }
+    elseif ($action -eq '3') {
+        $conCred = @($instances | Where-Object { $_.Credenciales -eq 'Sí' -and $_.Validada -eq 'Sí' })
+        if (-not $conCred) {
+            Write-Host "No hay instancias con credenciales válidas en instalacion/. Valida primero (opción 4) o asigna (opción 2)." -ForegroundColor Yellow
+            continue
+        }
+        Write-Host "`nInstancias con credenciales disponibles:" -ForegroundColor Cyan
+        $i=1; foreach($inst in $conCred){ $c = Load-InstanceCred $inst.Ruta; $cuenta = if($c){$c.cuenta}else{'(sin dato)'}; $srv = if($c){$c.servidor}else{'(sin dato)'}; Write-Host ("[{0}] {1} -> cuenta {2}, servidor {3}" -f $i, $inst.Instancia, $cuenta, $srv); $i++ }
+        $sel = Read-Host "Elegí número de instancia para credencial activa (ENTER cancela)"
+        if([string]::IsNullOrWhiteSpace($sel)){ continue }
+        if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $conCred.Count){ Write-Host "Selección inválida." -ForegroundColor Red; continue }
+        $chosen = $conCred[[int]$sel - 1]
+        $c = Load-InstanceCred $chosen.Ruta
+        if (-not $c) { Write-Host "No se pudo leer credenciales de la instancia elegida." -ForegroundColor Red; continue }
+        $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
+        $terminalExe    = Get-ChildItem -Path $instalacionDir -Filter 'terminal*.exe'   -ErrorAction SilentlyContinue | Select-Object -First 1
+        $metaeditorExe  = Get-ChildItem -Path $instalacionDir -Filter 'metaeditor*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+        $mqlDir         = Join-Path $instalacionDir 'MQL5'
+        $expertsDir     = Join-Path $mqlDir 'Experts'
+        $eaStudioDir    = Join-Path $expertsDir 'Ea_Studio'
+        $presetsDir     = Join-Path $mqlDir 'Presets'
+        $profilesTester = Join-Path $mqlDir 'Profiles/Tester'
+        $reportsDir     = Join-Path $instalacionDir 'report'
+        $logsTerminal   = Join-Path $mqlDir 'Logs'
+        $logsEditor     = Join-Path $instalacionDir 'Logs'
+        $logsTester     = Join-Path $instalacionDir 'Tester/Logs'
+        $agentsRoot     = Join-Path $instalacionDir 'Tester'
+        $outPath = Join-Path $instanciasRoot 'credencial_en_uso.json'
+        $outObj = [pscustomobject]@{
+            instancia = $chosen.Instancia
+            ruta_instancia = $chosen.Ruta
+            credencial = $c
+            terminal_exe = if($terminalExe){ $terminalExe.FullName } else { $null }
+            metaeditor_exe = if($metaeditorExe){ $metaeditorExe.FullName } else { $null }
+            rutas = [pscustomobject]@{
+                instalacion     = $instalacionDir
+                mql5            = $mqlDir
+                experts         = $expertsDir
+                ea_studio       = $eaStudioDir
+                presets         = $presetsDir
+                profiles_tester = $profilesTester
+                reports         = $reportsDir
+                logs_terminal   = $logsTerminal
+                logs_editor     = $logsEditor
+                logs_tester     = $logsTester
+                tester_agents   = $agentsRoot
             }
-
-            # Actualizar credenciales con estado de validación
-            $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
-            Write-Host "Estado de validación guardado en $credPathNew" -ForegroundColor DarkGray
+            fecha_seleccion = (Get-Date).ToString('s')
         }
+        $outObj | ConvertTo-Json -Depth 6 | Set-Content -Path $outPath -Encoding UTF8
+        Write-Host "Credencial activa guardada en $outPath" -ForegroundColor Green
+        Build-Hub -instName $chosen.Instancia -instPath $chosen.Ruta
+        try {
+            $expectedHub = ('{0}_hub' -f $chosen.Instancia)
+            Get-ChildItem -Path $dataRoot -Directory -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -like '*_hub' -and $_.Name -ne $expectedHub } |
+                ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+            $linkReportes = Join-Path $resultadosRoot 'Reportes-SinProcesar'
+            if (Test-Path $linkReportes) { Remove-Item -Path $linkReportes -Recurse -Force -ErrorAction SilentlyContinue }
+            foreach($d in @('Reportes-Analizados','Reportes-Normalizados')){ $full = Join-Path $resultadosRoot $d; if(-not (Test-Path $full)){ New-Item -ItemType Directory -Path $full -Force | Out-Null } }
+            New-LinkForce -Path $linkReportes -Target (Join-Path $instalacionDir 'report')
+        } catch {}
+        continue
     }
-    Show-KeybindReminder -Created:$keybindingsCreated
-    exit 0
-}
-elseif ($action -eq '3') {
-    $conCred = @($instances | Where-Object { $_.Credenciales -eq 'Sí' -and $_.Validada -eq 'Sí' })
-    if (-not $conCred) {
-        Write-Host "No hay instancias con credenciales válidas en instalacion/. Valida primero (opción 4) o asigna (opción 2)." -ForegroundColor Yellow
-        exit 0
-    }
-    Write-Host "`nInstancias con credenciales disponibles:" -ForegroundColor Cyan
-    $i=1; foreach($inst in $conCred){
-        $c = Load-InstanceCred $inst.Ruta
-        $cuenta = if($c){$c.cuenta}else{'(sin dato)'}
-        $srv    = if($c){$c.servidor}else{'(sin dato)'}
-        Write-Host ("[{0}] {1} -> cuenta {2}, servidor {3}" -f $i, $inst.Instancia, $cuenta, $srv)
-        $i++
-    }
-    $sel = Read-Host "Elegí número de instancia para credencial activa"
-    if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $conCred.Count){
-        Write-Host "Selección inválida." -ForegroundColor Red
-        exit 1
-    }
-    $chosen = $conCred[[int]$sel - 1]
-    $c = Load-InstanceCred $chosen.Ruta
-    if (-not $c) {
-        Write-Host "No se pudo leer credenciales de la instancia elegida." -ForegroundColor Red
-        exit 1
-    }
-    $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
-    $terminalExe    = Get-ChildItem -Path $instalacionDir -Filter 'terminal*.exe'   -ErrorAction SilentlyContinue | Select-Object -First 1
-    $metaeditorExe  = Get-ChildItem -Path $instalacionDir -Filter 'metaeditor*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
-    $mqlDir         = Join-Path $instalacionDir 'MQL5'
-    $expertsDir     = Join-Path $mqlDir 'Experts'
-    $eaStudioDir    = Join-Path $expertsDir 'Ea_Studio'
-    $presetsDir     = Join-Path $mqlDir 'Presets'
-    $profilesTester = Join-Path $mqlDir 'Profiles/Tester'
-    $reportsDir     = Join-Path $instalacionDir 'report'
-    $logsTerminal   = Join-Path $mqlDir 'Logs'
-    $logsEditor     = Join-Path $instalacionDir 'Logs'
-    $logsTester     = Join-Path $instalacionDir 'Tester/Logs'
-    $agentsRoot     = Join-Path $instalacionDir 'Tester'
-    $outPath = Join-Path $instanciasRoot 'credencial_en_uso.json'
-    $outObj = [pscustomobject]@{
-        instancia = $chosen.Instancia
-        ruta_instancia = $chosen.Ruta
-        credencial = $c
-        terminal_exe = if($terminalExe){ $terminalExe.FullName } else { $null }
-        metaeditor_exe = if($metaeditorExe){ $metaeditorExe.FullName } else { $null }
-        rutas = [pscustomobject]@{
-            instalacion     = $instalacionDir
-            mql5            = $mqlDir
-            experts         = $expertsDir
-            ea_studio       = $eaStudioDir
-            presets         = $presetsDir
-            profiles_tester = $profilesTester
-            reports         = $reportsDir
-            logs_terminal   = $logsTerminal
-            logs_editor     = $logsEditor
-            logs_tester     = $logsTester
-            tester_agents   = $agentsRoot
+    elseif ($action -eq '4') {
+        $noVal = @($instances | Where-Object { $_.Credenciales -eq 'Sí' -and $_.Validada -ne 'Sí' })
+        if (-not $noVal) {
+            Write-Host "No hay instancias con credenciales pendientes o fallidas." -ForegroundColor Yellow
+            continue
         }
-        fecha_seleccion = (Get-Date).ToString('s')
-    }
-    $outObj | ConvertTo-Json -Depth 6 | Set-Content -Path $outPath -Encoding UTF8
-    Write-Host "Credencial activa guardada en $outPath" -ForegroundColor Green
-    Build-Hub -instName $chosen.Instancia -instPath $chosen.Ruta
-    # Mantener solo el hub de la credencial activa para evitar confusión
-    try {
-        $expectedHub = ('{0}_hub' -f $chosen.Instancia)
-        Get-ChildItem -Path $dataRoot -Directory -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -like '*_hub' -and $_.Name -ne $expectedHub } |
-            ForEach-Object {
-                Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-            }
-        # Limpiar Reportes-SinProcesar si apunta a otra instancia
-        $linkReportes = Join-Path $resultadosRoot 'Reportes-SinProcesar'
-        if (Test-Path $linkReportes) {
-            Remove-Item -Path $linkReportes -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "`nInstancias con credenciales no validadas:" -ForegroundColor Cyan
+        $i=1; foreach($inst in $noVal){
+            $c = Load-InstanceCred $inst.Ruta
+            $cuenta = if($c){$c.cuenta}else{'(sin dato)'}
+            $srv    = if($c){$c.servidor}else{'(sin dato)'}
+            $estado = if($c){ if($c.validada -eq $true){'Sí'} elseif($c.validada -eq $false){'No'} else {'Pendiente'} } else {'(N/A)'}
+            Write-Host ("[{0}] {1} -> cuenta {2}, servidor {3}, validada={4}" -f $i, $inst.Instancia, $cuenta, $srv, $estado)
+            $i++
         }
-        # Asegurar carpetas base en RESULTADOS (sin symlink)
-        foreach($d in @('Reportes-Analizados','Reportes-Normalizados')){
-            $full = Join-Path $resultadosRoot $d
-            if(-not (Test-Path $full)){ New-Item -ItemType Directory -Path $full -Force | Out-Null }
+        $sel = Read-Host "Elegí número de instancia para reasignar credencial (ENTER cancela)"
+        if([string]::IsNullOrWhiteSpace($sel)){ continue }
+        if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $noVal.Count){ Write-Host "Selección inválida." -ForegroundColor Red; continue }
+        $chosen = $noVal[[int]$sel - 1]
+        $cuenta = Read-Host "Número de cuenta"
+        $pass   = Read-Host "Contraseña"
+        $server = Read-Host "Servidor"
+        $credObj = [pscustomobject]@{
+            cuenta      = $cuenta
+            password    = $pass
+            servidor    = $server
+            fecha_guardado = (Get-Date).ToString('s')
+            validada    = $false
+            fecha_validacion = $null
+            detalle_validacion = $null
         }
-        # Recrear link a reports de la instancia activa
-        New-LinkForce -Path $linkReportes -Target (Join-Path $instalacionDir 'report')
-    } catch {}
-    Show-KeybindReminder -Created:$keybindingsCreated
-    exit 0
-}
-elseif ($action -eq '4') {
-    # instancias con credenciales no validadas
-    $noVal = @($instances | Where-Object { $_.Credenciales -eq 'Sí' -and $_.Validada -ne 'Sí' })
-    if (-not $noVal) {
-        Write-Host "No hay instancias con credenciales pendientes o fallidas." -ForegroundColor Yellow
-        exit 0
-    }
-    Write-Host "`nInstancias con credenciales no validadas:" -ForegroundColor Cyan
-    $i=1; foreach($inst in $noVal){
-        $c = Load-InstanceCred $inst.Ruta
-        $cuenta = if($c){$c.cuenta}else{'(sin dato)'}
-        $srv    = if($c){$c.servidor}else{'(sin dato)'}
-        $estado = if($c){ if($c.validada -eq $true){'Sí'} elseif($c.validada -eq $false){'No'} else {'Pendiente'} } else {'(N/A)'}
-        Write-Host ("[{0}] {1} -> cuenta {2}, servidor {3}, validada={4}" -f $i, $inst.Instancia, $cuenta, $srv, $estado)
-        $i++
-    }
-    $sel = Read-Host "Elegí número de instancia para reasignar credencial"
-    if(-not ($sel -match '^\d+$') -or [int]$sel -lt 1 -or [int]$sel -gt $noVal.Count){
-        Write-Host "Selección inválida." -ForegroundColor Red
-        exit 1
-    }
-    $chosen = $noVal[[int]$sel - 1]
-    $cuenta = Read-Host "Número de cuenta"
-    $pass   = Read-Host "Contraseña"
-    $server = Read-Host "Servidor"
-    $credObj = [pscustomobject]@{
-        cuenta      = $cuenta
-        password    = $pass
-        servidor    = $server
-        fecha_guardado = (Get-Date).ToString('s')
-        validada    = $false
-        fecha_validacion = $null
-        detalle_validacion = $null
-    }
-    $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
-    if (-not (Test-Path $instalacionDir)) { New-Item -ItemType Directory -Path $instalacionDir -Force | Out-Null }
-    $credPathNew = Join-Path $instalacionDir 'credenciales.json'
-    $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
-    Write-Host "Credenciales guardadas en $credPathNew" -ForegroundColor Green
-    $terminalExe    = Get-ChildItem -Path $instalacionDir -Filter 'terminal*.exe'   -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($terminalExe) {
-        $openTerm = Read-Host "¿Abrir MT en modo portable para ingresar y validar la credencial ahora? (s/n)"
-        if ($openTerm -match '^[sS]') {
-            Write-Host "Abriendo MT en modo portable para validación..." -ForegroundColor Cyan
-            try {
-                $mtProc = Start-Process -FilePath $terminalExe.FullName -ArgumentList '/portable' -WorkingDirectory $instalacionDir -PassThru -ErrorAction Stop
-            } catch {
-                Write-Host "No se pudo abrir el terminal en modo portable: $_" -ForegroundColor Red
-            }
-
-            # Espera y lee logs para detectar autorización
-            $logsDir = Join-Path $instalacionDir 'logs'
-            $validated = $false
-            $failed = $false
-            $detalle = $null
-            if(Test-Path $logsDir){
-                $deadline = (Get-Date).AddMinutes(5)
-                while((Get-Date) -lt $deadline -and -not ($validated -or $failed)){
-                    $logFile = Get-ChildItem -Path $logsDir -Filter '*.log' -File -ErrorAction SilentlyContinue |
-                               Where-Object { $_.Name -ne 'metaeditor.log' } |
-                               Sort-Object LastWriteTime -Descending | Select-Object -First 1
-                    if($logFile){
-                        try{
-                            $lines = Get-Content -Path $logFile.FullName -Tail 400 -ErrorAction SilentlyContinue
-                        } catch { $lines = @() }
-                        foreach($ln in $lines){
-                            if($ln -match "authorized on"){
-                                $validated = $true
-                                $detalle = $ln.Trim()
-                                break
-                            }
-                            if($ln -match "authorization on .*failed"){
-                                $failed = $true
-                                $detalle = $ln.Trim()
-                                break
+        $instalacionDir = Join-Path $chosen.Ruta 'instalacion'
+        if (-not (Test-Path $instalacionDir)) { New-Item -ItemType Directory -Path $instalacionDir -Force | Out-Null }
+        $credPathNew = Join-Path $instalacionDir 'credenciales.json'
+        $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
+        Write-Host "Credenciales guardadas en $credPathNew" -ForegroundColor Green
+        $terminalExe    = Get-ChildItem -Path $instalacionDir -Filter 'terminal*.exe'   -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($terminalExe) {
+            $openTerm = Read-Host "¿Abrir MT en modo portable para ingresar y validar la credencial ahora? (s/n)"
+            if ($openTerm -match '^[sS]') {
+                Write-Host "Abriendo MT en modo portable para validación..." -ForegroundColor Cyan
+                try { Start-Process -FilePath $terminalExe.FullName -ArgumentList '/portable' -WorkingDirectory $instalacionDir -PassThru -ErrorAction Stop } catch { Write-Host "No se pudo abrir el terminal en modo portable: $_" -ForegroundColor Red }
+                $logsDir = Join-Path $instalacionDir 'logs'
+                $validated = $false; $failed = $false; $detalle = $null
+                if(Test-Path $logsDir){
+                    $deadline = (Get-Date).AddMinutes(5)
+                    while((Get-Date) -lt $deadline -and -not ($validated -or $failed)){
+                        $logFile = Get-ChildItem -Path $logsDir -Filter '*.log' -File -ErrorAction SilentlyContinue |
+                                   Where-Object { $_.Name -ne 'metaeditor.log' } |
+                                   Sort-Object LastWriteTime -Descending | Select-Object -First 1
+                        if($logFile){
+                            try{ $lines = Get-Content -Path $logFile.FullName -Tail 400 -ErrorAction SilentlyContinue } catch { $lines = @() }
+                            foreach($ln in $lines){
+                                if($ln -match "authorized on"){ $validated = $true; $detalle = $ln.Trim(); break }
+                                if($ln -match "authorization on .*failed"){ $failed = $true; $detalle = $ln.Trim(); break }
                             }
                         }
+                        if(-not ($validated -or $failed)){ Start-Sleep -Seconds 5 }
                     }
-                    if(-not ($validated -or $failed)){ Start-Sleep -Seconds 5 }
                 }
+                if($validated){ Write-Host "Credencial validada: $detalle" -ForegroundColor Green; $credObj.validada = $true; $credObj.fecha_validacion = (Get-Date).ToString('s'); $credObj.detalle_validacion = $detalle }
+                elseif($failed){ Write-Host "Credencial inválida: $detalle" -ForegroundColor Red; $credObj.validada = $false; $credObj.fecha_validacion = (Get-Date).ToString('s'); $credObj.detalle_validacion = $detalle }
+                else { Write-Host "No se pudo confirmar la validación en el log dentro del tiempo de espera." -ForegroundColor Yellow; $credObj.detalle_validacion = "pendiente" }
+                $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
+                Write-Host "Estado de validación guardado en $credPathNew" -ForegroundColor DarkGray
             }
-
-            if($validated){
-                Write-Host "Credencial validada: $detalle" -ForegroundColor Green
-                $credObj.validada = $true
-                $credObj.fecha_validacion = (Get-Date).ToString('s')
-                $credObj.detalle_validacion = $detalle
-            } elseif($failed){
-                Write-Host "Credencial inválida: $detalle" -ForegroundColor Red
-                $credObj.validada = $false
-                $credObj.fecha_validacion = (Get-Date).ToString('s')
-                $credObj.detalle_validacion = $detalle
-            } else {
-                Write-Host "No se pudo confirmar la validación en el log dentro del tiempo de espera." -ForegroundColor Yellow
-                $credObj.detalle_validacion = "pendiente"
-            }
-
-            # Actualizar credenciales con estado de validación
-            $credObj | ConvertTo-Json | Set-Content -Path $credPathNew -Encoding UTF8
-            Write-Host "Estado de validación guardado en $credPathNew" -ForegroundColor DarkGray
         }
+        continue
     }
-    Show-KeybindReminder -Created:$keybindingsCreated
-    exit 0
+    else {
+        Write-Host "Opción inválida." -ForegroundColor Red
+        continue
+    }
 }
-else {
-    Write-Host "Sin cambios." -ForegroundColor Yellow
-    Show-KeybindReminder -Created:$keybindingsCreated
-    exit 0
-}
+
+Show-KeybindReminder -Created:$keybindingsCreated

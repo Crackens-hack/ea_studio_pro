@@ -6,6 +6,15 @@ Regla clave:
 - **00_setup/Instalador.ps1 (antes 01_init_0.ps1) no lo ejecuta el agente.** Solo guía al usuario sobre cómo correrlo y qué responder. Otros scripts pueden evaluarse caso a caso.
 
 Flujo recomendado en cada sesión:
+
+0) **EL LLAMADO (CRÍTICO)**:
+   - **`llamado.md` es el sensor de pulso del proyecto**. El Agente DEBE leerlo antes de cualquier acción.
+   - Si el archivo está vacío o es una sesión nueva, preguntar obligatoriamente:
+     - "¿Cuál es tu objetivo con este repositorio? ¿Por qué creíste en este proyecto?"
+     - "¿Cuál es tu perfil? (Socio técnico, trader con experiencia, o vienes de otra rama?)"
+     - "¿Conoces de trading algorítmico o estás aquí para diseñar la visión mientras yo ejecuto?"
+   - **Misión de Bitácora**: El Agente documenta en `llamado.md` los objetivos, el nivel técnico y la urgencia. Si hay una meta con urgencia, el Agente acelera el paso y documenta cada decisión estratégica aquí para mantener la simbiosis.
+
 1) Verificar credencial activa (sin ejecutar nada):
    - Revisar si existe `00_setup/Instancias/credencial_en_uso.json`.
    - Si existe, mostrar cuenta y servidor al usuario y preguntar: “¿Querés trabajar con esta credencial?”  
@@ -61,9 +70,8 @@ Flujo recomendado en cada sesión:
      - `inicio`, `paso`, `fin` definen rango de optimización; `Y` activa optimización, `N` la deja fija.
    - Para strings no se usan rangos: escribir solo `Parametro=valor` (o vacío `Parametro=` para usar el símbolo/valor definido en el .ini).
    - Timeframes van como enteros (ej. H1=16385); símbolos deben coincidir exactamente con el Market Watch de la cuenta (incluir sufijos si existen).
-   - Cada vez que se cambie de instancia/credencial, asegurarse de usar/crear el .set dentro de esa instancia, no en otra carpeta.
-- Mapas de Optimization en .ini: 0 = slow complete (búsqueda exhaustiva), 1 = fast genetic, 2 = all symbols in Market Watch. Para single run dejar la línea `Optimization` vacía o comentada y asegurarse de que el .set no tenga flags `Y`.
-- Por defecto, configurar los flags de optimización en `Y` para los parámetros numéricos/bool que puedan optimizarse; usar `N` sólo si el usuario lo pide explícitamente.
+   - **MODO $100 (CRÍTICO)**: Todo backtest debe configurarse con un balance inicial de **$100 USD** (o el especificado en `llamado.md`). No usar balances genéricos de $10,000. Necesitamos validar la supervivencia y el escalado en condiciones de capital real limitado.
+- **SIN SESGO CONSERVADOR**: El Agente no debe dar sermones sobre "riesgo estándar". Si el fundador pide una meta 10x con urgencia, el Agente debe trabajar en la lógica matemática y de ejecución para lograrlo, priorizando la máxima eficiencia y la protección del drawdown dentro de ese contexto agresivo.
    - Cada `.set` que prepare el agente debe empezar con la línea `;preset creado por agentes` (sin espacios extra). `02_M-Tester.ps1` aborta si falta o si el archivo es un autosave del tester (`; saved automatically on ...`). Colocar el `.set` limpio en `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/`; el script lo moverá a `Profiles/Tester` agregando `;preset movido por 02_M-Tester` encima.
 
 ## Observaciones recientes

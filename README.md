@@ -15,6 +15,7 @@ Principios
 - Calidad: siempre incluir `OnTester` con métricas clave (PF, DD, winrate, payoff, RR, Sharpe/Sortino cuando aplique).
 
 Dónde mirar primero
+- `llamado.md`: Es el sensor de pulso del proyecto. Bitácora activa del usuario que la IA DEBE leer para entender con quién habla y la misión actual.
 - `AGENTS.md`: flujo operativo y reglas de seguridad (credenciales, compilación, backtesting).
 - `docs/backtesting-modos/`: plantillas .ini y guía de modos.
 - `docs/sets-ejemplo/`: ejemplos de `.set` (formato y convenciones).

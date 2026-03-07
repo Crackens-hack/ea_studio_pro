@@ -1,0 +1,155 @@
+├── .env
+├── .gitignore
+├── .vscode
+│   └── keybindings.json
+├── 00_setup
+│   ├── Desinstalador.ps1
+│   ├── Instalador.ps1
+│   ├── Instancias
+│   │   ├── DERIV
+│   │   │   └── instalacion
+│   │   │       ├── Bases
+│   │   │       │   ├── Custom
+│   │   │       │   ├── Default
+│   │   │       │   ├── Deriv-Demo
+│   │   │       │   ├── signals
+│   │   │       ├── Config
+│   │   │       │   ├── certificates
+│   │   │       ├── MQL5
+│   │   │       │   ├── Experts
+│   │   │       │   │   ├── Advisors
+│   │   │       │   │   ├── Ea_Studio
+│   │   │       │   │   ├── Examples
+│   │   │       │   │   └── Free Robots
+│   │   │       │   ├── Files
+│   │   │       │   ├── Images
+│   │   │       │   ├── Include
+│   │   │       │   ├── Indicators
+│   │   │       │   ├── Libraries
+│   │   │       │   ├── Logs
+│   │   │       │   ├── Presets
+│   │   │       │   ├── Profiles
+│   │   │       │   ├── Scripts
+│   │   │       │   ├── Services
+│   │   │       ├── MetaEditor64.exe
+│   │   │       ├── Profiles
+│   │   │       ├── Sounds
+│   │   │       ├── Terminal.ico
+│   │   │       ├── credenciales.json
+│   │   │       ├── launch_portable.cmd
+│   │   │       ├── logs
+│   │   │       ├── metatester64.exe
+│   │   │       ├── report
+│   │   │       ├── temp
+│   │   │       ├── terminal64.exe
+│   │   │       ├── terminal_portable.lnk
+│   │   │       ├── tester
+│   │   │       └── uninstall.exe
+│   │   ├── RoboForex_MT5_CUENTA_1
+│   │   │   └── instalacion
+│   │   │       ├── Bases
+│   │   │       │   ├── Custom
+│   │   │       │   ├── Default
+│   │   │       │   ├── signals
+│   │   │       ├── Config
+│   │   │       │   ├── certificates
+│   │   │       ├── MQL5
+│   │   │       │   ├── Experts
+│   │   │       │   │   ├── Advisors
+│   │   │       │   │   ├── Ea_Studio
+│   │   │       │   │   ├── Examples
+│   │   │       │   │   └── Free Robots
+│   │   │       │   ├── Files
+│   │   │       │   ├── Images
+│   │   │       │   ├── Include
+│   │   │       │   ├── Indicators
+│   │   │       │   ├── Libraries
+│   │   │       │   ├── Logs
+│   │   │       │   ├── Presets
+│   │   │       │   ├── Profiles
+│   │   │       │   ├── Scripts
+│   │   │       │   ├── Services
+│   │   │       ├── MetaEditor64.exe
+│   │   │       ├── Profiles
+│   │   │       ├── Sounds
+│   │   │       ├── Terminal.ico
+│   │   │       ├── Tester
+│   │   │       ├── launch_portable.cmd
+│   │   │       ├── logs
+│   │   │       ├── metatester64.exe
+│   │   │       ├── report
+│   │   │       ├── terminal64.exe
+│   │   │       ├── terminal_portable.lnk
+│   │   │       └── uninstall.exe
+│   │   └── credencial_en_uso.json
+│   ├── bin
+│   │   ├── deriv5setup.exe
+│   │   ├── mt5setup.exe
+│   │   ├── roboforexltd4setup.exe
+│   │   └── roboforexltd5setup.exe
+│   └── requirements.txt
+├── 01_Compilador.ps1
+├── 02_M-Tester.ps1
+├── 03_Recompilador.ps1
+├── AGENTS.md
+├── BUILD
+│   ├── 01_ea_construccion
+│   │   └── .gitkeep
+│   ├── 02_ea_mejorar
+│   │   └── .gitkeep
+│   ├── 03_PORTAFOLIO
+│   │   ├── .gitkeep
+│   │   ├── ApexTrendTracker
+│   │   │   ├── ApexTrendTracker.ex5
+│   │   │   ├── ApexTrendTracker.mq5
+│   │   │   ├── ApexTrendTracker.set
+│   │   │   └── ApexTrendTracker_teoria.md
+│   │   ├── README.md
+│   │   └── teoria_template.md
+│   └── 04_ARCHIVADOS
+├── Compilacion
+├── DATA
+│   └── DERIV_hub
+│       ├── Asesores_Expertos(En Terminal)
+│       ├── LOGS_Agents
+│       ├── LOGS_Editor
+│       │   ├── 20260307.log
+│       │   └── metaeditor.log
+│       ├── LOGS_Terminal
+│       ├── presets
+│       └── profiles_tester
+├── README.md
+├── RESULTADOS
+│   ├── Reportes-Analizados
+│   ├── Reportes-Normalizados
+│   └── Reportes-SinProcesar
+├── Tools
+│   ├── EXEC-INI
+│   │   ├── 00_docs_plantilla.md
+│   │   ├── 01_plantilla_documental.ini
+│   │   ├── exec.ini
+│   │   └── mtester.conf
+│   ├── all_symbols_bruto.ini
+│   ├── brute.ini
+│   ├── fitness
+│   │   └── modelos.md
+│   ├── forward.ini
+│   ├── genetica70_fw30.ini
+│   ├── genetica_simple.ini
+│   ├── single_all_symbols.ini
+│   ├── single_full.ini
+│   ├── single_logic.ini
+│   ├── single_test.ini
+│   └── visual_debug.ini
+├── docs
+│   ├── includes-ejemplo
+│   └── sets-ejemplo
+│       ├── Ejemplo_de_set.set
+│       └── plantilla_general.set
+├── script
+│   ├── 1_analisis_conf.json
+│   ├── A_Normalizador_Master.py
+│   ├── B_Analista_Profesional.py
+│   └── Limpiador.py
+├── tree.py
+└── tree.txt

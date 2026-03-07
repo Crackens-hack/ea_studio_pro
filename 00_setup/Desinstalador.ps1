@@ -95,9 +95,7 @@ try {
 } catch {
     Write-Host "No se pudo eliminar la carpeta: $($_)" -ForegroundColor Red
     Write-Host "Revisa si el terminal sigue abierto o permisos de archivos." -ForegroundColor Yellow
-    $shouldPurgeData = $false  # si no eliminó la instancia, no seguir con purga
 }
-
 # Purga de DATA y credencial activa si corresponde
 if($shouldPurgeData){
     if(Test-Path $dataRoot){
@@ -114,6 +112,15 @@ if($shouldPurgeData){
             Write-Host "credencial_en_uso.json eliminada." -ForegroundColor Green
         } catch {
             Write-Host "No se pudo eliminar credencial_en_uso.json: $($_)" -ForegroundColor Yellow
+        }
+    }
+    $setersRoot = Join-Path $expectedRoot '000_SETERS'
+    if(Test-Path $setersRoot){
+        try{
+            Remove-Item -Path $setersRoot -Recurse -Force -ErrorAction Stop
+            Write-Host "000_SETERS eliminada de la raíz (última/instancia activa)." -ForegroundColor Green
+        } catch {
+            Write-Host "No se pudo eliminar 000_SETERS: $($_)" -ForegroundColor Yellow
         }
     }
     # Si era la instancia activa, limpiar también el enlace a reportes crudos
