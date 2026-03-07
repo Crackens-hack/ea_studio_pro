@@ -5,6 +5,8 @@ $expectedRoot   = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
 $instanciasRoot = Join-Path $expectedRoot '00_setup/Instancias'
 $credFile       = Join-Path $instanciasRoot 'credencial_en_uso.json'
 $dataRoot       = Join-Path $expectedRoot 'DATA'
+$resultadosRoot = Join-Path $expectedRoot 'RESULTADOS'
+$linkReportes   = Join-Path $resultadosRoot 'Reportes-SinProcesar'
 
 function Assert-Location {
     $here = (Get-Location).ProviderPath
@@ -112,6 +114,15 @@ if($shouldPurgeData){
             Write-Host "credencial_en_uso.json eliminada." -ForegroundColor Green
         } catch {
             Write-Host "No se pudo eliminar credencial_en_uso.json: $($_)" -ForegroundColor Yellow
+        }
+    }
+    # Si era la instancia activa, limpiar también el enlace a reportes crudos
+    if($isActiveInstance -and (Test-Path $linkReportes)){
+        try{
+            Remove-Item -Path $linkReportes -Force -Recurse -ErrorAction Stop
+            Write-Host "Enlace RESULTADOS/Reportes-SinProcesar eliminado (instancia activa desinstalada)." -ForegroundColor Green
+        } catch {
+            Write-Host "No se pudo eliminar Reportes-SinProcesar: $($_)" -ForegroundColor Yellow
         }
     }
 }

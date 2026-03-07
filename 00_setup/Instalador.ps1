@@ -7,7 +7,8 @@ param(
 
 $expectedRoot     = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
 $instanciasRoot   = Join-Path $expectedRoot '00_setup/Instancias'
-$defaultInstaller = Join-Path $expectedRoot '00_setup/bin/mt5setup.exe'
+$installerDir     = Join-Path $expectedRoot '00_setup/bin'
+$defaultInstaller = Join-Path $installerDir 'mt5setup.exe'
 $dataRoot         = Join-Path $expectedRoot 'DATA'
 $resultadosRoot   = Join-Path $expectedRoot 'RESULTADOS'
 
@@ -101,6 +102,44 @@ function Load-InstanceCred {
     try { return Get-Content $instCred -Raw | ConvertFrom-Json } catch { return $null }
 }
 
+function Select-Installer {
+    param([string]$cliPath)
+    # Si vino por parámetro y existe, úsalo
+    if ($cliPath -and (Test-Path $cliPath)) { return $cliPath }
+
+    # Listar ejecutables en 00_setup/bin
+    $exeList = @()
+    if (Test-Path $installerDir) {
+        $exeList = Get-ChildItem -Path $installerDir -Filter '*.exe' -File -ErrorAction SilentlyContinue
+    }
+
+    if ($exeList.Count -eq 0) {
+        Write-Host "No se encontraron instaladores en $installerDir." -ForegroundColor Yellow
+        $path = Read-Host "Ingresá la ruta completa a mt5setup.exe (o Enter para cancelar)"
+        return $path
+    }
+
+    Write-Host "Instaladores encontrados en $installerDir:" -ForegroundColor Cyan
+    $i = 1
+    foreach($f in $exeList){
+        $mark = if ($f.Name -ieq 'mt5setup.exe') {'(recomendado)'} else {''}
+        Write-Host ("[{0}] {1} {2}" -f $i, $f.Name, $mark)
+        $i++
+    }
+    $sel = Read-Host "Elegí número de instalador (Enter para usar mt5setup.exe si está, o cancelar)"
+
+    if ([string]::IsNullOrWhiteSpace($sel)) {
+        $mt5 = $exeList | Where-Object { $_.Name -ieq 'mt5setup.exe' } | Select-Object -First 1
+        if ($mt5) { return $mt5.FullName }
+        Write-Host "No se seleccionó instalador y no hay mt5setup.exe." -ForegroundColor Yellow
+        return $null
+    }
+    if(-not ($sel -match '^\d+$')) { Write-Host "Selección inválida." -ForegroundColor Red; return $null }
+    $idx = [int]$sel
+    if($idx -lt 1 -or $idx -gt $exeList.Count){ Write-Host "Selección fuera de rango." -ForegroundColor Red; return $null }
+    return $exeList[$idx-1].FullName
+}
+
 function Ensure-PortableInstall {
     param($instName, $installerPath)
     $success         = $false
@@ -111,10 +150,8 @@ function Ensure-PortableInstall {
         if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
     }
 
-    if (-not $installerPath -and (Test-Path $defaultInstaller)) { $installerPath = $defaultInstaller }
-    if (-not $installerPath) {
-        $installerPath = Read-Host "Ruta al instalador MT5/MT4 (mt5setup.exe). Enter para omitir"
-    }
+    # Seleccionar instalador (lista lo que haya en 00_setup/bin)
+    $installerPath = Select-Installer -cliPath $installerPath
     if (-not $installerPath) {
         Write-Host "Instancia creada sin instalar MT. Ejecutá manualmente con /portable apuntando a $instalacionDir" -ForegroundColor Yellow
         return $false
@@ -271,6 +308,13 @@ function Build-Hub {
     } catch {}
 }
 
+function Show-KeybindReminder {
+    param([bool]$Created)
+    if($Created){
+        Write-Host "TIP: Copiá .vscode/keybindings.json a tu keybindings de usuario (%APPDATA%\\Code\\User) para tener los atajos rápidos en cualquier workspace." -ForegroundColor Cyan
+    }
+}
+
 Assert-Location
 
 # Asegurar carpeta DATA en raíz
@@ -280,80 +324,63 @@ if (-not (Test-Path $dataRoot)) {
 if (-not (Test-Path $resultadosRoot)) {
     try { New-Item -ItemType Directory -Path $resultadosRoot -Force | Out-Null } catch {}
 }
-# Asegurar .vscode/tasks.json con atajos básicos si no existe
+# Asegurar .vscode/keybindings.json con atajos básicos si no existe
 $vscodeDir   = Join-Path $expectedRoot '.vscode'
-$tasksPath   = Join-Path $vscodeDir 'tasks.json'
 $keysPath    = Join-Path $vscodeDir 'keybindings.json'
 if (-not (Test-Path $vscodeDir)) {
     try { New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null } catch {}
 }
-if (-not (Test-Path $tasksPath)) {
-    $tasksContent = @'
-{
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Normalizador (reports → Reportes-Normalizados)",
-      "type": "shell",
-      "command": "python",
-      "args": ["script/A_Normalizador_Master.py"],
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "problemMatcher": []
-    },
-    {
-      "label": "Analista (Reportes-Analizados)",
-      "type": "shell",
-      "command": "python",
-      "args": ["script/B_Analista_Profesional.py"],
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "problemMatcher": []
-    },
-    {
-      "label": "Limpiar RESULTADOS",
-      "type": "shell",
-      "command": "python",
-      "args": ["script/Clear.py"],
-      "group": "none",
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "problemMatcher": []
-    }
-  ]
-}
-'@
-    try { Set-Content -Path $tasksPath -Value $tasksContent -Encoding UTF8 }
-    catch { Write-Host "No se pudo crear .vscode/tasks.json: $_" -ForegroundColor Yellow }
-}
+$keybindingsCreated = $false
 # Crear keybindings solo si no existe para no pisar ajustes del usuario
 if (-not (Test-Path $keysPath)) {
     $keysContent = @'
 [
   {
-    "key": "alt+t",
-    "command": "workbench.action.tasks.runTask",
-    "when": "editorTextFocus || terminalFocus || explorerViewletVisible"
+    "key": "alt+d alt+d",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "powershell -ExecutionPolicy Bypass -File 00_setup/Desinstalador.ps1\r" }
   },
   {
-    "key": "ctrl+alt+shift+n",
-    "command": "workbench.action.tasks.runTask",
-    "args": "Normalizador (reports → Reportes-Normalizados)"
+    "key": "alt+i alt+i",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "powershell -ExecutionPolicy Bypass -File 00_setup/Instalador.ps1\r" }
   },
   {
-    "key": "ctrl+alt+shift+a",
-    "command": "workbench.action.tasks.runTask",
-    "args": "Analista (Reportes-Analizados)"
+    "key": "alt+t alt+t",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "powershell -ExecutionPolicy Bypass -File 02_M-Tester.ps1\r" }
   },
   {
-    "key": "ctrl+alt+shift+c",
-    "command": "workbench.action.tasks.runTask",
-    "args": "Limpiar RESULTADOS"
+    "key": "alt+c alt+c",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "powershell -ExecutionPolicy Bypass -File 01_Compilador.ps1\r" }
+  },
+  {
+    "key": "alt+r alt+r",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "powershell -ExecutionPolicy Bypass -File 03_Recompilador.ps1\r" }
+  },
+  {
+    "key": "alt+n alt+n",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "python script/A_Normalizador_Master.py\r" }
+  },
+  {
+    "key": "alt+a alt+a",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "python script/B_Analista_Profesional.py\r" }
+  },
+  {
+    "key": "alt+l alt+l",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "python script/Limpiador.py\r" }
   }
 ]
 '@
     try {
         Set-Content -Path $keysPath -Value $keysContent -Encoding UTF8
-        Write-Host "Atajos Ctrl+Alt+Shift+N/A/C creados en .vscode/keybindings.json." -ForegroundColor Green
+        Write-Host "Atajos Alt+letra Alt+letra creados en .vscode/keybindings.json para scripts clave." -ForegroundColor Green
+        $keybindingsCreated = $true
     } catch {
         Write-Host "No se pudo crear .vscode/keybindings.json: $_" -ForegroundColor Yellow
     }
@@ -372,6 +399,7 @@ if (-not $instances) {
     } else {
         Write-Host "Instalación cancelada o fuera de la ruta esperada. Vuelve a ejecutar y elige la carpeta sugerida." -ForegroundColor Yellow
     }
+    Show-KeybindReminder -Created:$keybindingsCreated
     exit 0
 }
 
@@ -395,6 +423,7 @@ if ($action -eq '1') {
     } else {
         Write-Host "Instalación cancelada o fuera de la ruta esperada. Vuelve a ejecutar y elige la carpeta sugerida." -ForegroundColor Yellow
     }
+    Show-KeybindReminder -Created:$keybindingsCreated
     exit 0
 }
 elseif ($action -eq '2') {
@@ -495,6 +524,7 @@ elseif ($action -eq '2') {
             Write-Host "Estado de validación guardado en $credPathNew" -ForegroundColor DarkGray
         }
     }
+    Show-KeybindReminder -Created:$keybindingsCreated
     exit 0
 }
 elseif ($action -eq '3') {
@@ -581,6 +611,7 @@ elseif ($action -eq '3') {
         # Recrear link a reports de la instancia activa
         New-LinkForce -Path $linkReportes -Target (Join-Path $instalacionDir 'report')
     } catch {}
+    Show-KeybindReminder -Created:$keybindingsCreated
     exit 0
 }
 elseif ($action -eq '4') {
@@ -685,9 +716,11 @@ elseif ($action -eq '4') {
             Write-Host "Estado de validación guardado en $credPathNew" -ForegroundColor DarkGray
         }
     }
+    Show-KeybindReminder -Created:$keybindingsCreated
     exit 0
 }
 else {
     Write-Host "Sin cambios." -ForegroundColor Yellow
+    Show-KeybindReminder -Created:$keybindingsCreated
     exit 0
 }
