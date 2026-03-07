@@ -345,13 +345,16 @@ $ini+="UseDate=$($config["UseDate"])"
 $ini+="FromDate=$fromDate"
 $ini+="ToDate=$toDate"
 $ini+="Report=$report"
+$ini+="Deposit=$($config["Deposit"])"
+$ini+="Currency=$($config["Currency"])"
+$ini+="Leverage=$($config["Leverage"])"
 
 # 2) agregar plantilla del modo al final, filtrando solo las claves que generamos
 $templateIni = Join-Path $templatesDir ($mode.name + ".ini")
 if(Test-Path $templateIni){
     $tplLines = Get-Content $templateIni
     $current=""
-    $skipTesterKeys=@("Expert","ExpertParameters","Symbol","Period","Model","Spread","UseDate","FromDate","ToDate","Report")
+    $skipTesterKeys=@("Expert","ExpertParameters","Symbol","Period","Model","Spread","UseDate","FromDate","ToDate","Report","Deposit","Currency","Leverage")
     foreach($l in $tplLines){
         if($l -match '^\\s*\\[(.+?)\\]\\s*$'){
             $current=$matches[1]
