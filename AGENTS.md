@@ -29,19 +29,19 @@ Flujo recomendado en cada sesión:
    - Explicar que los .mq5/.mql5 van en `BUILD/01_ea_construccion`.
    - Ofrecer crear un EA nuevo según reglas del usuario o editar uno existente.
    - Cada EA debe acompañarse con un archivo de teoría `BUILD/01_ea_construccion/<nombre>_teoria.md` describiendo lógica, entradas/salidas, gestión de riesgo y parámetros clave.
-   - Si el EA necesita iteraciones/mejoras, moverlo (con su `_teoria.md` y, si aplica, .set) a `BUILD/02_ea_mejorar` y usar `03_Recompilador.ps1` para las siguientes compilaciones. En `02_ea_mejorar` también se archiva automáticamente el EA menos reciente para evitar sobrescrituras.
-   - Futuro flujo: al consolidar mejoras, los EAs listos para pruebas combinadas pasarán a `BUILD/03_portfolio` (criterios a definir: estabilidad forward, métricas mínimas y convergencia de optimizaciones).
+   - **NUEVA REGLA DE ITERACIÓN**: Si el EA necesita mejoras o correcciones tras los backtests, **NO LO MUEVAS a `BUILD/02_ea_mejorar`**. Toda iteración de un EA nacido en la fábrica debe hacerse sobre el mismo archivo en `BUILD/01_ea_construccion`. La carpeta `02_ea_mejorar` queda reservada para EAs ajenos a la fábrica (lógica no implementada aún).
+   - **LÍMITES DE LA ITERACIÓN (FRACASO Y CREACIÓN)**: La iteración en bucle sobre un archivo `.mq5` es exclusivamente para refinar y exprimir **el mismo tipo de estrategia** (ajustar stops, trailing, filtros). **NO se debe cambiar radicalmente la lógica** (ej: pasar de Reversión a Breakout). Si la idea original demuestra matemáticamente que no funciona, el Agente debe detenerse, informar del fracaso de la idea, y proponer crear un **NUEVO EA** (nuevo archivo `.mq5`). Al compilar el nuevo EA, el script `01_Compilador.ps1` se encargará de mover automáticamente el EA fallido a la carpeta `archivados`. El objetivo final del agente es llevar una idea viable al punto de dejar sus presets listos para la optimización genética manual.
 - No crear plantillas .ini de backtesting salvo que el usuario lo pida explícitamente. Sólo generar el .set en la instancia activa.
    - Flujo después de crear el EA y el .set: **preguntar si compilar y preferentemente compilar el agente** (ejecutando `01_Compilador.ps1` si el usuario lo autoriza). No saltar directo a backtests hasta completar la compilación.
 
 3) Compilar:
    - Preguntar si el usuario quiere que el agente ejecute `01_Compilador.ps1`; sólo ejecutarlo si el usuario lo autoriza explícitamente. La expectativa por defecto es que el agente compile, pero debe solicitar permiso antes.
     - Si lo prefiere hacer manual: indicar `powershell -ExecutionPolicy Bypass -File .\\01_Compilador.ps1`.
-   - Para EAs en iteración dentro de `BUILD/02_ea_mejorar`, usar `03_Recompilador.ps1` (mismo flujo de logs en `Compilacion/logs` y copia a `Experts/Ea_Studio`).
+   - Para EAs en iteración, simplemente reescribir el código en `BUILD/01_ea_construccion` y volver a usar `01_Compilador.ps1`. El script archivará inteligentemente las versiones anteriores.
    - Promoción a portfolio: los agentes deciden el pase a `BUILD/03_PORTAFOLIO` cuando el EA cumple criterios mínimos (ver sección Portfolio más abajo) y la teoría/presets están actualizados. Mantener una copia histórica en `02_ea_mejorar/archivados` antes de mover.
     - Tras compilar, revisar `Compilacion/logs` y confirmar que el `.ex5` se copió a `00_setup/Instancias/<instancia>/instalacion/MQL5/Experts/Ea_Studio`.
    - Si hay errores/advertencias: leer el log, corregir el .mq5 y volver a compilar hasta que quede limpio. El agente es responsable de iterar.
-   - Al archivar EAs antiguos, archivar también el respectivo `<nombre>_teoria.md` para mantener contexto histórico.
+   - Al compilar, `01_Compilador.ps1` se encarga de guardar las copias antiguas en `01_ea_construccion/archivados`, manteniendo nuestro entorno limpio con la versión actual siempre a la vista.
 
 4) Referencias y calidad de código:
    - Antes o durante la elaboración del EA, puede consultar `docs` para buscar includes, convenciones y ejemplos que mejoren la calidad.

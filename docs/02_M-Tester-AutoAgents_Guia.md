@@ -36,8 +36,8 @@ Desde la raíz del proyecto `.eastudio` y con el `.venv` activado:
 El flujo de salida está diseñado para el análisis inmediato. Los resultados se guardan siguiendo esta jerarquía:
 
 ### 1. Reportes Crudos (MT5)
-Se generan dentro de la carpeta de la instancia activa (`RoboForex`, `Deriv`, etc.):
-*   `00_setup\Instancias\<INSTANCIA>\instalacion\report\<MODO>\<EA>_<MODO>.htm`
+Se generan dentro de la carpeta de la instancia activa (Ejemplos: `RoboForex`, `Deriv`, o cualquier instancia configurada):
+*   `00_setup\Instancias\<INSTANCIA>\instalacion\report\ <MODO>\<EA>_<MODO>.htm`
 
 ### 2. Reportes Normalizados (Para Humanos y Agentes)
 Si usaste el flag `-AutoNormalize`, los encontrarás aquí:

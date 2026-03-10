@@ -3,7 +3,7 @@
 # Strategy Tester Engine para EA Studio
 # ======================================================
 
-$root = Join-Path $env:USERPROFILE "Desktop\.eastudio"
+$root = $PSScriptRoot
 
 $configFile = Join-Path $root "Tools\EXEC-INI\mtester.conf"
 $credFile   = Join-Path $root "00_setup\Instancias\credencial_en_uso.json"
@@ -247,8 +247,10 @@ $fromDate=Compute-FromDate $toDate $days
 # INPUT USUARIO
 # -----------------------------------------------------
 
-$symbol=Read-Host "Symbol (Enter EURUSD)"
-if(!$symbol){$symbol="EURUSD"}
+$defaultSymbol = $config["DefaultSymbol"]
+if ([string]::IsNullOrWhiteSpace($defaultSymbol)) { $defaultSymbol = "EURUSD" }
+$symbol=Read-Host "Symbol (Enter $defaultSymbol)"
+if(!$symbol){$symbol=$defaultSymbol}
 
 $tf=Read-Host "Timeframe (Enter H1)"
 if(!$tf){$tf="H1"}
