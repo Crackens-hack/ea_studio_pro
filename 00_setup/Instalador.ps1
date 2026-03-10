@@ -5,7 +5,7 @@ param(
     [string]$InstallerPath
 )
 
-$expectedRoot     = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
+$expectedRoot     = Split-Path -Parent $PSScriptRoot
 $instanciasRoot   = Join-Path $expectedRoot '00_setup/Instancias'
 $installerDir     = Join-Path $expectedRoot '00_setup/bin'
 $defaultInstaller = Join-Path $installerDir 'mt5setup.exe'
@@ -41,8 +41,7 @@ function Get-NextInstanceName {
 function Assert-Location {
     $here = (Get-Location).ProviderPath
     if ($here -ne $expectedRoot) {
-        Write-Host "Ejecutá desde $expectedRoot. Actual: $here" -ForegroundColor Yellow
-        exit 1
+        Write-Host "TIP: Ejecutando desde $expectedRoot" -ForegroundColor Gray
     }
     $isVSCode = $env:TERM_PROGRAM -eq 'vscode' -or $env:VSCODE_GIT_IPC_HANDLE -or $env:VSCODE_INJECTION
     if (-not $isVSCode) {

@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$repoRoot   = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot   = $PSScriptRoot
 $credPath   = Join-Path $repoRoot '00_setup/Instancias/credencial_en_uso.json'
 $sourceDir  = Join-Path $repoRoot 'BUILD/02_ea_mejorar'
 $archiveDir = Join-Path $sourceDir 'archivados'

@@ -46,7 +46,7 @@ Flujo recomendado en cada sesión:
 4) Referencias y calidad de código:
    - Antes o durante la elaboración del EA, puede consultar `docs` para buscar includes, convenciones y ejemplos que mejoren la calidad.
    - Si aparece un error que no reconoce, revisar primero los logs y luego la documentación en `docs` antes de pedir más datos al usuario.
-   - Modelos de fitness listos para copiar están en `Tools/fitness/modelos.md`. Usar el modelo “Robusto balanceado” como plantilla por defecto salvo instrucción contraria.
+   - Modelos de fitness, teoría de entrenamiento y configuraciones maestras están en `docs/fitness/` y `docs/templates/`. Usar el modelo “Robusto balanceado” como plantilla por defecto salvo instrucción contraria.
 
 5) Métricas y OnTester (siempre incluir):
    - Implementar `OnTester()` en todos los EAs generados, salvo que el usuario pida explícitamente no hacerlo.
@@ -54,12 +54,14 @@ Flujo recomendado en cada sesión:
    - Devolver un fitness combinando métricas (ejemplo sugerido: `(profit factor * winrate) / (1 + maxDD)`), ajustable según el caso.
    - Registrar métricas en log/Comment para que el usuario las vea en pruebas y optimizaciones.
 
-6) Backtesting (02_M-Tester.ps1):
-   - Sugerir al usuario el modo de prueba (single, preset/.set, optimización, forward, visual, fechas, símbolo, modelado, spread, etc.), pero **no ejecutar `02_M-Tester.ps1`** ni pedir permiso para ejecutarlo. El usuario decide y lo corre.
-   - No proponer ni crear archivos .ini a menos que el usuario lo pida explícitamente. Se puede sugerir qué valores ajustar si el usuario edita un .ini.
-   - Usar los ejemplos de `docs/backtesting-modos/*.ini` como referencia para sugerencias, no para crear archivos sin pedido.
-   - Si el usuario comparte resultados/errores de backtest, ayudar a interpretarlos y proponer ajustes; iterar el EA y recompilar según sea necesario.
-
+6) Backtesting (02_M-Tester.ps1 y 02_M-Tester-AutoAgents.ps1):
+   - **Fase de Validación AI (Agente)**: El agente usa `Tools-Agents/02_M-Tester-AutoAgents.ps1` para validar la lógica pura sin intervención manual. 
+     - Modos preferidos: `single_logic`, `single_test`.
+     - Flujo: Compilar -> Auto-Test -> Auto-Normalizar -> Analizar.
+     - El agente itera el código y el `.set` primario hasta que el resultado sea >= 0 (evitando overfitting).
+   - **Fase de Optimización (Usuario)**: Solo el usuario corre `02_M-Tester.ps1` para optimizaciones genéticas pesadas. 
+     - El agente debe avisar cuando la estrategia está "Lista para Genético" una vez superada la validación de lógica.
+     - Una vez que el usuario confirma el fin del genético ("Estamos OK con el genético"), el agente retoma para normalizar y analizar el resultado final.
 7) Archivos .set (parámetros de tester/optimización):
    - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.
      - Carpeta operativa para el probador: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` (es donde MT5 busca por defecto). **El agente debe guardar/copiar allí los .set que cree.**
