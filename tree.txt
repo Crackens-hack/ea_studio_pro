@@ -9,121 +9,64 @@
 │   ├── Desinstalador.ps1
 │   ├── Instalador.ps1
 │   ├── Instancias
-│   │   ├── DERIV
-│   │   │   └── instalacion
-│   │   │       ├── Bases
-│   │   │       │   ├── Custom
-│   │   │       │   ├── Default
-│   │   │       │   ├── Deriv-Demo
-│   │   │       │   ├── signals
-│   │   │       ├── Config
-│   │   │       │   ├── certificates
-│   │   │       ├── MQL5
-│   │   │       │   ├── Experts
-│   │   │       │   │   ├── Advisors
-│   │   │       │   │   ├── Ea_Studio
-│   │   │       │   │   ├── Examples
-│   │   │       │   │   └── Free Robots
-│   │   │       │   ├── Files
-│   │   │       │   ├── Images
-│   │   │       │   ├── Include
-│   │   │       │   ├── Indicators
-│   │   │       │   ├── Libraries
-│   │   │       │   ├── Logs
-│   │   │       │   ├── Presets
-│   │   │       │   ├── Profiles
-│   │   │       │   ├── Scripts
-│   │   │       │   ├── Services
-│   │   │       ├── MetaEditor64.exe
-│   │   │       ├── Profiles
-│   │   │       ├── Sounds
-│   │   │       ├── Terminal.ico
-│   │   │       ├── credenciales.json
-│   │   │       ├── launch_portable.cmd
-│   │   │       ├── logs
-│   │   │       ├── metatester64.exe
-│   │   │       ├── report
-│   │   │       ├── terminal64.exe
-│   │   │       ├── terminal_portable.lnk
-│   │   │       ├── tester
-│   │   │       └── uninstall.exe
 │   │   ├── DERIV-CRIPTO
 │   │   │   └── instalacion
-│   │   │       ├── Bases
-│   │   │       │   ├── Custom
-│   │   │       │   ├── Default
-│   │   │       │   ├── Deriv-Demo
-│   │   │       │   ├── signals
-│   │   │       ├── Config
-│   │   │       │   ├── certificates
-│   │   │       ├── MQL5
-│   │   │       │   ├── Experts
-│   │   │       │   │   ├── Advisors
-│   │   │       │   │   ├── Ea_Studio
-│   │   │       │   │   ├── Examples
-│   │   │       │   │   └── Free Robots
-│   │   │       │   ├── Files
-│   │   │       │   ├── Images
-│   │   │       │   ├── Include
-│   │   │       │   ├── Indicators
-│   │   │       │   ├── Libraries
-│   │   │       │   ├── Logs
-│   │   │       │   ├── Presets
-│   │   │       │   ├── Profiles
-│   │   │       │   ├── Scripts
-│   │   │       │   ├── Services
-│   │   │       ├── MetaEditor64.exe
-│   │   │       ├── Profiles
-│   │   │       ├── Sounds
-│   │   │       ├── Terminal.ico
-│   │   │       ├── credenciales.json
-│   │   │       ├── launch_portable.cmd
-│   │   │       ├── logs
-│   │   │       ├── metatester64.exe
-│   │   │       ├── report
-│   │   │       ├── terminal64.exe
-│   │   │       ├── terminal_portable.lnk
-│   │   │       ├── tester
-│   │   │       └── uninstall.exe
-│   │   ├── Standard_Deriv
-│   │   │   └── instalacion
-│   │   │       ├── Bases
-│   │   │       │   ├── Custom
-│   │   │       │   ├── Default
-│   │   │       │   ├── Deriv-Demo
-│   │   │       │   ├── signals
-│   │   │       ├── Config
-│   │   │       │   ├── certificates
-│   │   │       ├── MQL5
-│   │   │       │   ├── Experts
-│   │   │       │   │   ├── Advisors
-│   │   │       │   │   ├── Ea_Studio
-│   │   │       │   │   ├── Examples
-│   │   │       │   │   └── Free Robots
-│   │   │       │   ├── Files
-│   │   │       │   ├── Images
-│   │   │       │   ├── Include
-│   │   │       │   ├── Indicators
-│   │   │       │   ├── Libraries
-│   │   │       │   ├── Logs
-│   │   │       │   ├── Presets
-│   │   │       │   ├── Profiles
-│   │   │       │   ├── Scripts
-│   │   │       │   ├── Services
-│   │   │       ├── MetaEditor64.exe
-│   │   │       ├── Profiles
-│   │   │       ├── Sounds
-│   │   │       ├── Terminal.ico
-│   │   │       ├── Tester
-│   │   │       ├── credenciales.json
-│   │   │       ├── launch_portable.cmd
-│   │   │       ├── logs
-│   │   │       ├── metatester64.exe
-│   │   │       ├── report
-│   │   │       ├── terminal64.exe
-│   │   │       ├── terminal_portable.lnk
-│   │   │       └── uninstall.exe
-│   │   └── credencial_en_uso.json
+│   │   │       └── MQL5
+│   │   │           └── Presets
+│   │   ├── credencial_en_uso.json
+│   │   └── roboforex
+│   │       └── instalacion
+│   │           ├── Bases
+│   │           │   ├── Custom
+│   │           │   ├── Default
+│   │           │   ├── RoboForex-Pro
+│   │           │   │   ├── history
+│   │           │   │   ├── mail
+│   │           │   │   ├── news
+│   │           │   │   ├── subscriptions
+│   │           │   │   ├── symbols
+│   │           │   │   ├── ticks
+│   │           │   │   └── trades
+│   │           │   │       └── 68294064
+│   │           │   ├── signals
+│   │           ├── Config
+│   │           │   ├── certificates
+│   │           ├── MQL5
+│   │           │   ├── Experts
+│   │           │   │   ├── Advisors
+│   │           │   │   ├── Ea_Studio
+│   │           │   │   ├── Examples
+│   │           │   │   └── Free Robots
+│   │           │   ├── Files
+│   │           │   ├── Images
+│   │           │   ├── Include
+│   │           │   ├── Indicators
+│   │           │   ├── Libraries
+│   │           │   ├── Logs
+│   │           │   ├── Presets
+│   │           │   ├── Profiles
+│   │           │   ├── Scripts
+│   │           │   ├── Services
+│   │           ├── MetaEditor64.exe
+│   │           ├── Profiles
+│   │           ├── Sounds
+│   │           ├── Terminal.ico
+│   │           ├── credenciales.json
+│   │           ├── launch_portable.cmd
+│   │           ├── logs
+│   │           ├── metatester64.exe
+│   │           ├── report
+│   │           ├── terminal64.exe
+│   │           ├── terminal_portable.lnk
+│   │           ├── tester
+│   │           │   ├── Agent-127.0.0.1-3000
+│   │           │   │   ├── logs
+│   │           │   │   └── temp
+│   │           │   ├── bases
+│   │           │   ├── cache
+│   │           │   ├── config
+│   │           │   └── logs
+│   │           └── uninstall.exe
 │   ├── bin
 │   │   ├── deriv5setup.exe
 │   │   ├── mt5setup.exe
@@ -137,14 +80,23 @@
 ├── BUILD
 │   ├── 01_ea_construccion
 │   │   ├── .gitkeep
-│   │   ├── Tshark_V1.ex5
-│   │   ├── Tshark_V1.mq5
-│   │   └── Tshark_V1_teoria.md
+│   │   └── archivados
+│   │       ├── ApexTrendTracker.ex5
+│   │       ├── ApexTrendTracker.mq5
+│   │       ├── ApexTrendTracker_teoria.md
+│   │       ├── Apex_Kraken_V1.ex5
+│   │       ├── Apex_Kraken_V1.mq5
+│   │       ├── Apex_Kraken_V1_teoria.md
+│   │       ├── MomentumRanger.ex5
+│   │       ├── MomentumRanger.mq5
+│   │       ├── MomentumRanger.set
+│   │       ├── MomentumRanger_genetic.set
+│   │       ├── MomentumRanger_teoria.md
+│   │       ├── Tshark_V1.ex5
+│   │       ├── Tshark_V1.mq5
+│   │       └── Tshark_V1_teoria.md
 │   ├── 02_ea_mejorar
-│   │   ├── .gitkeep
-│   │   ├── ApexTrendTracker.ex5
-│   │   ├── ApexTrendTracker.mq5
-│   │   └── ApexTrendTracker_teoria.md
+│   │   └── .gitkeep
 │   ├── 03_PORTAFOLIO
 │   │   ├── .gitkeep
 │   │   ├── ApexTrendTracker
@@ -155,17 +107,17 @@
 │   │   ├── README.md
 │   │   └── teoria_template.md
 │   └── 04_ARCHIVADOS
+│       └── .gitkeep
 ├── Compilacion
-│   └── logs
-│       ├── Tshark_V1.log
-│       └── metaeditor.log
+│   └── .gitkeep
 ├── DATA
-│   └── DERIV-CRIPTO_hub
+│   └── roboforex_hub
 │       ├── Asesores_Expertos(En Terminal)
-│       │   └── Tshark_V1.ex5
+│       │   └── MomentumRanger.ex5
 │       ├── LOGS_Agents
 │       ├── LOGS_Editor
-│       │   ├── 20260307.log
+│       │   ├── 20260309.log
+│       │   ├── 20260310.log
 │       │   └── metaeditor.log
 │       └── LOGS_Terminal
 ├── README.md
