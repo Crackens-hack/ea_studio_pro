@@ -29,7 +29,7 @@ def load_reports_root(repo_root: Path) -> Path:
     cred_path = repo_root / "00_setup" / "Instancias" / "credencial_en_uso.json"
     if not cred_path.exists():
         sys.exit(f"No se encontró {cred_path}. Ejecutá 00_setup/Instalador.ps1 para seleccionar la instancia.")
-    data = json.loads(cred_path.read_text(encoding="utf-8"))
+    data = json.loads(cred_path.read_text(encoding="utf-8-sig"))
     reports = data.get("rutas", {}).get("reports")
     if not reports:
         sys.exit("El JSON de credencial no tiene la clave rutas.reports.")
