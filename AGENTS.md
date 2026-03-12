@@ -28,7 +28,8 @@ Flujo recomendado en cada sesión:
 2) Preparar EA (el agente es quien genera/edita código MQL5):
    - Explicar que los .mq5/.mql5 van en `BUILD/01_ea_construccion`.
    - Ofrecer crear un EA nuevo según reglas del usuario o editar uno existente.
-   - Cada EA debe acompañarse con un archivo de teoría `BUILD/01_ea_construccion/<nombre>_teoria.md` describiendo lógica, entradas/salidas, gestión de riesgo y parámetros clave.
+    - **REGLA DE ORO DE NOMENCLATURA (CRÍTICO)**: Todo parámetro de entrada en el código MQL5 (`input type variable`) **DEBE** comenzar con el prefijo `Inp` (Ej: `InpBaseLot`, `InpStopLoss`). Esta convención es NO NEGOCIABLE, ya que permite que el Normalizador y el DuckDB Analyzer identifiquen dinámicamente qué columnas son parámetros y cuáles son métricas.
+    - Cada EA debe acompañarse con un archivo de teoría `BUILD/01_ea_construccion/<nombre>_teoria.md` describiendo lógica, entradas/salidas, gestión de riesgo y parámetros clave.
    - **NUEVA REGLA DE ITERACIÓN**: Si el EA necesita mejoras o correcciones tras los backtests, **NO LO MUEVAS a `BUILD/02_ea_mejorar`**. Toda iteración de un EA nacido en la fábrica debe hacerse sobre el mismo archivo en `BUILD/01_ea_construccion`. La carpeta `02_ea_mejorar` queda reservada para EAs ajenos a la fábrica (lógica no implementada aún).
    - **LÍMITES DE LA ITERACIÓN (FRACASO Y CREACIÓN)**: La iteración en bucle sobre un archivo `.mq5` es exclusivamente para refinar y exprimir **el mismo tipo de estrategia** (ajustar stops, trailing, filtros). **NO se debe cambiar radicalmente la lógica** (ej: pasar de Reversión a Breakout). Si la idea original demuestra matemáticamente que no funciona, el Agente debe detenerse, informar del fracaso de la idea, y proponer crear un **NUEVO EA** (nuevo archivo `.mq5`). Al compilar el nuevo EA, el script `01_Compilador.ps1` se encargará de mover automáticamente el EA fallido a la carpeta `archivados`. El objetivo final del agente es llevar una idea viable al punto de dejar sus presets listos para la optimización genética manual.
 - No crear plantillas .ini de backtesting salvo que el usuario lo pida explícitamente. Sólo generar el .set en la instancia activa.
@@ -48,11 +49,10 @@ Flujo recomendado en cada sesión:
    - Si aparece un error que no reconoce, revisar primero los logs y luego la documentación en `docs` antes de pedir más datos al usuario.
    - Modelos de fitness, teoría de entrenamiento y configuraciones maestras están en `docs/fitness/` y `docs/templates/`. Usar el modelo “Robusto balanceado” como plantilla por defecto salvo instrucción contraria.
 
-5) Métricas y OnTester (siempre incluir):
-   - Implementar `OnTester()` en todos los EAs generados, salvo que el usuario pida explícitamente no hacerlo.
-   - Calcular y mostrar al menos: profit factor, max drawdown, recovery factor, winrate, payoff ratio, avg RR, número de trades, profit medio por trade, Sharpe/Sortino si es posible, tiempo medio en posición.
-   - Devolver un fitness combinando métricas (ejemplo sugerido: `(profit factor * winrate) / (1 + maxDD)`), ajustable según el caso.
-   - Registrar métricas en log/Comment para que el usuario las vea en pruebas y optimizaciones.
+5) Métricas y OnTester (MANDATORIO):
+   - **OBLIGACIÓN DEL AGENTE**: Antes de implementar `OnTester()`, el agente DEBE leer `docs/fitness/modelos.md` para elegir el criterio adecuado (Robusto, Mercenario, Cazador o Profesional) según el Timeframe y estilo del EA.
+   - **Nunca omitir**: El EA debe quedar listo con la función `OnTester()` implementada y configurada correctamente ANTES de cualquier optimización genética.
+   - El agente es responsable de que el EA "hable el mismo idioma" que nuestro sistema de análisis DuckDB, siguiendo los formatos de log sugeridos en los modelos.
 
 6) Backtesting (02_M-Tester.ps1 y 02_M-Tester-AutoAgents.ps1):
    - **Fase de Validación AI (Agente)**: El agente usa `Tools-Agents/02_M-Tester-AutoAgents.ps1` para validar la lógica pura sin intervención manual. 
@@ -61,8 +61,20 @@ Flujo recomendado en cada sesión:
      - El agente itera el código y el `.set` primario hasta que el resultado sea >= 0 (evitando overfitting).
    - **Fase de Optimización (Usuario)**: Solo el usuario corre `02_M-Tester.ps1` para optimizaciones genéticas pesadas. 
      - El agente debe avisar cuando la estrategia está "Lista para Genético" una vez superada la validación de lógica.
-     - Una vez que el usuario confirma el fin del genético ("Estamos OK con el genético"), el agente retoma para normalizar y analizar el resultado final.
+      - **PROTOCOLO DE EVALUACIÓN "JUEZ AI" (OBLIGATORIO)**: Ante el mensaje "optimizacion genetica terminada", el agente debe:
+         1. **DuckDB (Diagnóstico)**: Ejecutar `A_Normalizador_Master.py` y `Tools-Agents/DuckDB_Analyzer.py`.
+         2. **Veredicto de Supervivencia**:
+            - **DESCARTE**: Si ningún set tiene `Profit_FW > 0` y `PF_FW > 1.10`, el agente declara el fracaso de la idea y propone un nuevo EA.
+            - **LUZ VERDE (CLÚSTER)**: Si hay un grupo de pases ganadores con parámetros similares:
+                a) El agente extrae el **Promedio del Clúster**.
+                b) **Sincronizar MQL5 (CRÍTICO)**: El agente debe actualizar los valores de los `input` en el archivo `.mq5` con estos promedios y **RECOMPILAR** el EA. La estrategia debe ser funcional "out of the box" desde el código fuente.
+                c) Crear el `.set` Maestro correspondiente.
+         3. **Expansión Multi-Símbolo**: Con el EA recompilado y el Set Maestro, el agente instruye al usuario a correr `single_all_symbols`. 
+            - Si el Set Maestro es polivalente (ganador en otros símbolos sin optimizar), es candidato a Portafolio Elite.
+            - Si solo funciona en uno, se queda como EA especialista de ese símbolo.
+         4. **Documentación**: Ver `Tools-Agents/Decision_Protocol.md` para los criterios técnicos de promediado y descarte.
 7) Archivos .set (parámetros de tester/optimización):
+   - **REGLA CRÍTICA Y MANDATORIA**: Todo archivo `.set` generado por un agente **DEBE** comenzar exactamente con la frase: `;preset creado por agentes` en la primera línea. Si no tiene esta frase exacta (sin variaciones como "para genética", etc.), el script `02_M-Tester.ps1` abortará la operación.
    - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.
      - Carpeta operativa para el probador: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` (es donde MT5 busca por defecto). **El agente debe guardar/copiar allí los .set que cree.**
      - Carpeta de perfiles del tester: `00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/` (puede usarse como staging, pero si el .set se deja ahí hay que duplicarlo en `Presets` antes de correr pruebas).

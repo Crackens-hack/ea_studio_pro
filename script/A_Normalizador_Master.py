@@ -77,7 +77,31 @@ def convert_xml_to_csv(xml_path: Path, csv_path: Path) -> bool:
                     cell_data = cell.find("ss:Data", ns)
                     data.append(cell_data.text if cell_data is not None else "")
                 writer.writerow(data)
-        print(f"[OK] {xml_path} -> {csv_path}")
+        
+        try:
+            import duckdb
+            parquet_path = csv_path.with_suffix(".parquet")
+            # Usamos normalize_names para tener nombres limpios (sin espacios, minúsculas)
+            con = duckdb.connect()
+            con.execute(f"COPY (SELECT * FROM read_csv_auto('{csv_path.as_posix()}', normalize_names=True)) TO '{parquet_path.as_posix()}' (FORMAT PARQUET)")
+            
+            # Generar el "Schema Map" (Inteligencia de Columnas)
+            res = con.execute(f"SELECT * FROM '{parquet_path.as_posix()}' LIMIT 0")
+            col_names = [d[0] for d in res.description]
+            schema = {
+                "source_xml": xml_path.name,
+                "total_columns": len(col_names),
+                "metrics": [c for c in col_names if not c.lower().startswith("inp")],
+                "inputs": [c for c in col_names if c.lower().startswith("inp")],
+                "all_columns": col_names
+            }
+            schema_path = csv_path.with_suffix(".schema.json")
+            with schema_path.open("w", encoding="utf-8") as sf:
+                json.dump(schema, sf, indent=4)
+        except Exception as e_duck:
+            print(f"[WARN] No se pudo procesar schema/parquet con duckdb {csv_path}: {e_duck}")
+
+        print(f"[OK] {xml_path} -> {csv_path}, parquet y schema.json")
         return True
     except Exception as e:
         print(f"[ERROR] {xml_path}: {e}")
