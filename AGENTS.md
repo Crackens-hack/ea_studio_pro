@@ -76,8 +76,9 @@ Flujo recomendado en cada sesión:
 7) Archivos .set (parámetros de tester/optimización):
    - **REGLA CRÍTICA Y MANDATORIA**: Todo archivo `.set` generado por un agente **DEBE** comenzar exactamente con la frase: `;preset creado por agentes` en la primera línea. Si no tiene esta frase exacta (sin variaciones como "para genética", etc.), el script `02_M-Tester.ps1` abortará la operación.
    - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.
-     - Carpeta operativa para el probador: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` (es donde MT5 busca por defecto). **El agente debe guardar/copiar allí los .set que cree.**
-     - Carpeta de perfiles del tester: `00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/` (puede usarse como staging, pero si el .set se deja ahí hay que duplicarlo en `Presets` antes de correr pruebas).
+      - Carpeta operativa para el probador: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` (es donde MT5 busca por defecto).
+      - Carpeta de perfiles del tester: `00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/`.
+      - **REGLA MANDATORIA**: El agente DEBE guardar el `.set` generado en **AMBAS** carpetas simultáneamente para asegurar que el tester y el optimizador lo reconozcan sin errores de ruta.
    - Nombre típico: mismo nombre del EA, ej. `EA_Spectacular.set`.
    - Formato por línea (para numéricos/bools/enums): `Parametro=valor_defecto||inicio||paso||fin||Y|N` donde:
      - `valor_defecto` es lo que usa un backtest single si no optimiza.
