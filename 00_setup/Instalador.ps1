@@ -240,7 +240,8 @@ function Ensure-PortableInstall {
             $reportDir        = Join-Path $instalacionDir 'report'
             $testerProfileDir = Join-Path $instalacionDir 'MQL5/Profiles/Tester'
             $presetsDir       = Join-Path $mqlDir 'Presets'
-            foreach($d in @($mqlDir, $expertsDir, $eaStudioDir, $reportDir, $testerProfileDir, $presetsDir)){
+            $testerDir        = Join-Path $instalacionDir 'Tester'
+            foreach($d in @($mqlDir, $expertsDir, $eaStudioDir, $reportDir, $testerProfileDir, $presetsDir, $testerDir)){
                 if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
             }
             Write-Host "Estructura MQL5/Experts/Ea_Studio creada." -ForegroundColor Green
@@ -274,6 +275,10 @@ function Build-Hub {
     $instalacion = Join-Path $instPath 'instalacion'
     $credPath    = Join-Path $instalacion 'credenciales.json'
     $mqlDir      = Join-Path $instalacion 'MQL5'
+    $testerDir   = Join-Path $instalacion 'Tester'
+
+    # Asegurar que Tester existe para evitar links rotos iniciales
+    if (-not (Test-Path $testerDir)) { New-Item -ItemType Directory -Path $testerDir -Force | Out-Null }
 
     $links = @(
         @{ name='credencial.json';               target=$credPath },
@@ -283,7 +288,7 @@ function Build-Hub {
         @{ name='PROFILE_TESTER';               target=Join-Path $mqlDir 'Profiles/Tester'; rootLink=$true },
         @{ name='LOGS_Terminal';                 target=Join-Path $mqlDir 'Logs' },
         @{ name='LOGS_Editor';                   target=Join-Path $instalacion 'Logs' },
-        @{ name='LOGS_Tester';                   target=Join-Path $instalacion 'Tester/Logs' }
+        @{ name='LOGS_TESTER';                   target=$testerDir }
     )
 
     foreach($l in $links){
@@ -293,21 +298,6 @@ function Build-Hub {
         New-LinkForce -Path $p -Target $l.target
     }
 
-    # trace_agents: crear contenedor y symlinks a cada Agent-*/logs
-    $agentsRoot = Join-Path $instalacion 'Tester'
-    $hubAgents  = Join-Path $hubPath 'LOGS_Agents'
-    if(Test-Path $hubAgents){ Remove-Item -Path $hubAgents -Force -Recurse -ErrorAction SilentlyContinue }
-    New-Item -ItemType Directory -Path $hubAgents -Force | Out-Null
-    if(Test-Path $agentsRoot){
-        Get-ChildItem -Path $agentsRoot -Directory -Filter 'Agent-*' -ErrorAction SilentlyContinue | ForEach-Object {
-            $logsDir = Join-Path $_.FullName 'logs'
-            if(Test-Path $logsDir){
-                $linkPath = Join-Path $hubAgents $_.Name
-                if(Test-Path $linkPath){ Remove-Item -Path $linkPath -Force -Recurse -ErrorAction SilentlyContinue }
-                New-LinkForce -Path $linkPath -Target $logsDir
-            }
-        }
-    }
 
     # En RESULTADOS, crear link a report original de la instancia activa
     try {
