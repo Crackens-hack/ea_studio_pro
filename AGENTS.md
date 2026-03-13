@@ -85,8 +85,8 @@ Flujo recomendado en cada sesión:
    - Para strings no se usan rangos: escribir solo `Parametro=valor` (o vacío `Parametro=` para usar el símbolo/valor definido en el .ini).
    - Timeframes van como enteros (ej. H1=16385); símbolos deben coincidir exactamente con el Market Watch de la cuenta (incluir sufijos si existen).
    - Cada vez que se cambie de instancia/credencial, asegurarse de usar/crear el .set dentro de esa instancia, no en otra carpeta.
-   - **MODO $1,000 (VALIDACIÓN TÉCNICA)**: Todo backtest debe configurarse con un balance inicial de **$1,000 USD** como estándar de validación de lógica (salvo instrucción específica en `llamado.md`). Esto evita descartar estrategias ganadoras por falta de margen inicial, permitiendo encontrar el "Edge" antes del aterrizaje a la cuenta real de $100.
-   - **SIN SESGO CONSERVADOR**: El Agente no debe dar sermones sobre "riesgo estándar". Si el fundador pide una meta 10x con urgencia, el Agente debe trabajar en la lógica matemática y de ejecución para lograrlo, priorizando la máxima eficiencia y la protección del drawdown dentro de ese contexto agresivo.
+    - **PROTOCOLO DE SIMETRÍA (MODO 5000)**: Todo backtest debe configurarse con un balance inicial de **5000** como estándar de validación de lógica. Esto garantiza simetría total con los **5000 centavos** ($50 real) de la cuenta ProCent del Fundador. El objetivo es escalar hasta **100,000** (equivalente a $1000 real).
+    - **SIN SESGO CONSERVADOR**: El Agente no debe dar sermones sobre "riesgo estándar". Si el fundador pide una meta agresiva, el Agente debe trabajar en la lógica matemática para lograrlo, priorizando la máxima eficiencia dentro del contexto de alto apalancamiento (1:2000).
    - Cada `.set` que prepare el agente debe empezar con la línea `;preset creado por agentes` (sin espacios extra). `02_M-Tester.ps1` aborta si falta o si el archivo es un autosave del tester (`; saved automatically on ...`). Colocar el `.set` limpio en `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/`; el script lo moverá a `Profiles/Tester` agregando `;preset movido por 02_M-Tester` encima.
 
 ## Observaciones recientes
