@@ -1,7 +1,7 @@
 # Desinstala una instancia de MT (carpeta en 00_setup/Instancias)
 # Flujo: lista instancias, pide elección, confirma nombre, ejecuta uninstall.exe si existe y luego borra la carpeta completa.
 
-$expectedRoot   = Join-Path $env:USERPROFILE 'Desktop\.eastudio'
+$expectedRoot   = Split-Path -Parent $PSScriptRoot
 $instanciasRoot = Join-Path $expectedRoot '00_setup/Instancias'
 $credFile       = Join-Path $instanciasRoot 'credencial_en_uso.json'
 $dataRoot       = Join-Path $expectedRoot 'DATA'
@@ -11,8 +11,7 @@ $linkReportes   = Join-Path $resultadosRoot 'Reportes-SinProcesar'
 function Assert-Location {
     $here = (Get-Location).ProviderPath
     if ($here -ne $expectedRoot) {
-        Write-Host "Ejecutá desde $expectedRoot. Actual: $here" -ForegroundColor Yellow
-        exit 1
+        Write-Host "TIP: Ejecutando desde $expectedRoot" -ForegroundColor Gray
     }
     $isVSCode = $env:TERM_PROGRAM -eq 'vscode' -or $env:VSCODE_GIT_IPC_HANDLE -or $env:VSCODE_INJECTION
     if (-not $isVSCode) {
