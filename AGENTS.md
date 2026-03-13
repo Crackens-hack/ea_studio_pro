@@ -66,16 +66,18 @@ Flujo recomendado en cada sesión:
      - El agente debe avisar cuando la estrategia está "Lista para Genético" una vez superada la validación de lógica.
       - **PROTOCOLO DE EVALUACIÓN "JUEZ AI" (OBLIGATORIO)**: Ante el mensaje "optimizacion genetica terminada", el agente debe:
          1. **DuckDB (Diagnóstico)**: Ejecutar `A_Normalizador_Master.py` y `Tools-Agents/DuckDB_Analyzer.py`.
-         2. **Veredicto de Supervivencia**:
+         2. **REGLA DE ORO DE VALIDACIÓN (COHERENCIA FORWARD)**: El Agente debe priorizar el rendimiento en el **Forward Test** por sobre el Backtest. Un resultado de Backtest "inflado" (ej. 4.32) que se desploma en Forward (ej. < 0.20) es signo de **Overfitting** y debe ser DESCARTADO. Buscamos coherencia: el set ideal es aquel donde el `forward_custom` es sólido y proporcional al del backtest.
+         3. **Prioridad de Métrica (CUSTOM > PROFIT)**: Al analizar con DuckDB, el criterio principal de ordenamiento y selección es la métrica **Custom** (generada por `OnTester`), ya que esta ya descuenta el Drawdown y premia la eficiencia. El Profit es secundario; buscamos calidad de curva, no solo dólares brutos.
+         4. **Veredicto de Supervivencia**:
             - **DESCARTE**: Si ningún set tiene `Profit_FW > 0` y `PF_FW > 1.10`, el agente declara el fracaso de la idea y propone un nuevo EA.
             - **LUZ VERDE (CLÚSTER)**: Si hay un grupo de pases ganadores con parámetros similares:
                 a) El agente extrae el **Promedio del Clúster**.
                 b) **Sincronizar MQL5 (CRÍTICO)**: El agente debe actualizar los valores de los `input` en el archivo `.mq5` con estos promedios y **RECOMPILAR** el EA. La estrategia debe ser funcional "out of the box" desde el código fuente.
                 c) Crear el `.set` Maestro correspondiente.
-         3. **Expansión Multi-Símbolo**: Con el EA recompilado y el Set Maestro, el agente instruye al usuario a correr `single_all_symbols`. 
+         5. **Expansión Multi-Símbolo**: Con el EA recompilado y el Set Maestro, el agente instruye al usuario a correr `single_all_symbols`. 
             - Si el Set Maestro es polivalente (ganador en otros símbolos sin optimizar), es candidato a Portafolio Elite.
             - Si solo funciona en uno, se queda como EA especialista de ese símbolo.
-         4. **Documentación**: Ver `Tools-Agents/Decision_Protocol.md` para los criterios técnicos de promediado y descarte.
+         6. **Documentación**: Ver `Tools-Agents/Decision_Protocol.md` para los criterios técnicos de promediado y descarte.
 7) Archivos .set (parámetros de tester/optimización):
    - **REGLA CRÍTICA Y MANDATORIA**: Todo archivo `.set` generado por un agente **DEBE** comenzar exactamente con la frase: `;preset creado por agentes` en la primera línea. Si no tiene esta frase exacta (sin variaciones como "para genética", etc.), el script `02_M-Tester.ps1` abortará la operación.
    - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.

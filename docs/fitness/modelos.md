@@ -44,6 +44,11 @@ La exigencia de datos cambia según la velocidad del gráfico. El agente debe aj
 *   **Contexto**: Gestión de fondos. Buscamos la línea recta.
 *   **Fórmula**: `(Profit / DrawdownRelativo) * LR_Correlation`
 
+#### E. Modelo S-CYCLES (Soft Fitness / Gradiente)
+*   **Contexto**: Optimización inicial. Buscamos evitar resultados "planchados" permitiendo un gradiente en sets perdedores.
+*   **Fórmula**: `(Payoff * RecoveryFactor * Rampa_Consistencia * Profit_Multiplier) / (1.0 + DrawdownRelativo)`
+*   **Nota**: `Profit_Multiplier` es 1.0 si `Profit > 0` y 0.5 (penalización) si `Profit <= 0`.
+
 ---
 
 ### 💻 4. Template de Implementación (Copia/Pega)
