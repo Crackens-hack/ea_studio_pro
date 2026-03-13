@@ -45,6 +45,9 @@ Flujo recomendado en cada sesión:
    - Al compilar, `01_Compilador.ps1` se encarga de guardar las copias antiguas en `01_ea_construccion/archivados`, manteniendo nuestro entorno limpio con la versión actual siempre a la vista.
 
 4) Referencias y calidad de código:
+    - **OBLIGACIÓN DE CONSULTA**: Antes de iniciar cualquier desarrollo, el Agente DEBE revisar la carpeta `docs/` y el archivo de recomendaciones de ChatGPT en `.01-DOC-FOR-USER/chatgpt-recomendando-a-antigravity.md`.
+    - **RECURSOS TÉCNICOS**: La carpeta `docs/` contiene **Includes con lógica pre-armada**, convenciones y ejemplos de patrones de entrada/salida. Si el Agente se siente "atorado" o no sabe cómo implementar una lógica MQL5 específica, **DEBE** buscar primero en estos recursos antes de informar un bloqueo.
+    - **CRITERIO TÉCNICO**: Las recomendaciones externas (ChatGPT) se usan como referencia e inspiración, pero **NO se siguen ciegamente**. El Agente debe aplicar su propio juicio técnico, priorizar la simetría del proyecto y la coherencia con el repositorio.
    - Antes o durante la elaboración del EA, puede consultar `docs` para buscar includes, convenciones y ejemplos que mejoren la calidad.
    - Si aparece un error que no reconoce, revisar primero los logs y luego la documentación en `docs` antes de pedir más datos al usuario.
    - Modelos de fitness, teoría de entrenamiento y configuraciones maestras están en `docs/fitness/` y `docs/templates/`. Usar el modelo “Robusto balanceado” como plantilla por defecto salvo instrucción contraria.
@@ -78,7 +81,7 @@ Flujo recomendado en cada sesión:
    - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.
       - Carpeta operativa para el probador: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` (es donde MT5 busca por defecto).
       - Carpeta de perfiles del tester: `00_setup/Instancias/<instancia>/instalacion/MQL5/Profiles/Tester/`.
-      - **REGLA MANDATORIA**: El agente DEBE guardar el `.set` generado en **AMBAS** carpetas simultáneamente para asegurar que el tester y el optimizador lo reconozcan sin errores de ruta.
+      - **REGLA MANDATORIA DE SINCRONIZACIÓN**: El agente DEBE guardar el `.set` generado en **AMBAS** carpetas simultáneamente. Esta acción es **OBLIGATORIA** cada vez que se actualice el código del EA o se realice una nueva compilación, asegurando que los parámetros en el tester nunca queden obsoletos respecto al código fuente.
    - Nombre típico: mismo nombre del EA, ej. `EA_Spectacular.set`.
    - Formato por línea (para numéricos/bools/enums): `Parametro=valor_defecto||inicio||paso||fin||Y|N` donde:
      - `valor_defecto` es lo que usa un backtest single si no optimiza.
