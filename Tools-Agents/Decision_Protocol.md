@@ -43,3 +43,21 @@ Una vez creado el Set Maestro, el agente solicita al usuario ejecutar el modo **
 ---
 
 > **Nota**: Este flujo asegura que solo las estrategias con una ventaja matemática real y robusta lleguen al Portafolio, eliminando el factor "suerte" del optimizador genético.
+
+---
+
+### 5. Extracción y Reporte de Élite (Z_Sets)
+**Esta etapa ocurre SOLO después de un largo trabajo de backtest y una genética+forward exitosa.** Es el paso previo y fundamental antes de avanzar con el portafolio o de realizar single tests finales con sets de alto calibre y nuestros estándares.
+
+Una vez identificados los pases (IDs) ganadores del clúster o los "sobrevivientes" más sólidos:
+
+1.  **Extracción Cruzada de Métricas (BT + FW)**:
+    Se debe utilizar el script en `Tools-Agents/tmp_analyzer_final.py` (modificable según necesidad). Este script toma los archivos parquet normalizados (tanto el del backtest general como el del forward test), cruza la data usando el `pass` ID, y extrae métricas detalladas (Profit, PF, Sharpe, Drawdown, y parámetros) exclusivamente para los sets ganadores seleccionados.
+2.  **Alojamiento en el "Salón de la Fama"**:
+    Se crea (si no existe) la carpeta `Z_Sets/{Nombre_del_EA}` en el directorio raíz.
+3.  **Generación de Archivos `.set`**:
+    Por cada pase ganador, se crea su archivo `.set` respectivo dentro de `Z_Sets/{Nombre_del_EA}/`, con nombres claros que indiquen su cualidad (ej: `Set_The_Future_King_2853.set`).
+4.  **Creación del Informe Élite**:
+    Se genera (o actualiza) el archivo `Reporte_Elite_01.md` dentro de esa misma carpeta. Allí se plasma una lista estructurada con las métricas extraídas en el paso 1, desglosando el rendimiento en Backtest vs. Forward, y ofreciendo una conclusión ingenieril de por qué se seleccionaron.
+
+*Todo lo que entra a `Z_Sets` es material de calidad superior, listo para ser implementado o sometido a las validaciones finales de estrés.*

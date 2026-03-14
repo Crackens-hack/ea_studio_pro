@@ -47,6 +47,7 @@ Flujo recomendado en cada sesión:
 4) Referencias y calidad de código:
     - **OBLIGACIÓN DE CONSULTA**: Antes de iniciar cualquier desarrollo, el Agente DEBE revisar la carpeta `docs/` y el archivo de recomendaciones de ChatGPT en `.01-DOC-FOR-USER/chatgpt-recomendando-a-antigravity.md`.
     - **RECURSOS TÉCNICOS**: La carpeta `docs/` contiene **Includes con lógica pre-armada**, convenciones y ejemplos de patrones de entrada/salida. Si el Agente se siente "atorado" o no sabe cómo implementar una lógica MQL5 específica, **DEBE** buscar primero en estos recursos antes de informar un bloqueo.
+    - **BITÁCORA DE ERRORES (CRÍTICO)**: Antes de codificar un nuevo EA, el Agente DEBE leer la carpeta `docs/research/`. Allí se encuentran las lecciones aprendidas de EAs anteriores (como el caso de la Paradox Signal en S-Cycles). El Agente tiene la obligación de NO repetir errores de lógica ya documentados (ej: evitar auto-referencia en fractales, asegurar cierre de vela para breakouts).
     - **CRITERIO TÉCNICO**: Las recomendaciones externas (ChatGPT) se usan como referencia e inspiración, pero **NO se siguen ciegamente**. El Agente debe aplicar su propio juicio técnico, priorizar la simetría del proyecto y la coherencia con el repositorio.
    - Antes o durante la elaboración del EA, puede consultar `docs` para buscar includes, convenciones y ejemplos que mejoren la calidad.
    - Si aparece un error que no reconoce, revisar primero los logs y luego la documentación en `docs` antes de pedir más datos al usuario.
@@ -74,11 +75,15 @@ Flujo recomendado en cada sesión:
                 a) El agente extrae el **Promedio del Clúster**.
                 b) **Sincronizar MQL5 (CRÍTICO)**: El agente debe actualizar los valores de los `input` en el archivo `.mq5` con estos promedios y **RECOMPILAR** el EA. La estrategia debe ser funcional "out of the box" desde el código fuente.
                 c) Crear el `.set` Maestro correspondiente.
-         5. **Expansión Multi-Símbolo**: Con el EA recompilado y el Set Maestro, el agente instruye al usuario a correr `single_all_symbols`. 
+         5. **Extracción Élite (Z_Sets)** (Si se identificaron ganadores rotundos): 
+            - El agente DEBE ejecutar `Tools-Agents/DuckDB_Extractor_Elite.py` para cruzar la data del Backtest y Forward de los pases ganadores.
+            - Los sets ganadores deben guardarse y aislarse en un archivo `.set` dentro de la carpeta `Z_Sets/<Nombre_del_EA>/`.
+            - Se debe generar un informe `Reporte_Elite_01.md` en esa misma carpeta detallando las métricas cruzadas (Profit, PF, Sharpe, etc.) y la justificación técnica.
+         6. **Expansión Multi-Símbolo**: Con el EA recompilado y el Set Maestro, el agente instruye al usuario a correr `single_all_symbols`. 
             - Si el Set Maestro es polivalente (ganador en otros símbolos sin optimizar), es candidato a Portafolio Elite.
             - Si solo funciona en uno, se queda como EA especialista de ese símbolo.
-         6. **Documentación**: Ver `Tools-Agents/Decision_Protocol.md` para los criterios técnicos de promediado y descarte.
-7) Archivos .set (parámetros de tester/optimización):
+         7. **Documentación**: Ver `Tools-Agents/Decision_Protocol.md` para los criterios técnicos de promediado y descarte.
+8) Archivos .set (parámetros de tester/optimización):
    - **REGLA CRÍTICA Y MANDATORIA**: Todo archivo `.set` generado por un agente **DEBE** comenzar exactamente con la frase: `;preset creado por agentes` en la primera línea. Si no tiene esta frase exacta (sin variaciones como "para genética", etc.), el script `02_M-Tester.ps1` abortará la operación.
    - Ubicación: siempre en la instancia activa según `credencial_en_uso.json`.
       - Carpeta operativa para el probador: `00_setup/Instancias/<instancia>/instalacion/MQL5/Presets/` (es donde MT5 busca por defecto).
